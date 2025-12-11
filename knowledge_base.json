@@ -1,0 +1,46 @@
+[
+  {
+    "id_qa": "GENERAL_BIENVENIDA",
+    "diagnostico": "Bienvenida e Instrucciones Generales",
+    "intencion_clave": "hola, que haces, ayuda, bienvenido",
+    "respuesta_validada": "¡Hola! Soy tu Asistente Traumatológico. Mi propósito es recordarte las instrucciones post-quirúrgicas/rehabilitación dadas por tu médico y responder preguntas frecuentes. **Recuerda: NO soy un médico y no puedo diagnosticar emergencias.**",
+    "nivel_de_urgencia": "BAJO",
+    "tags": [
+      "inicio",
+      "general"
+    ]
+  },
+  {
+    "id_qa": "ALERTA_GUARDRAIL_001",
+    "diagnostico": "General - Señales de Alarma",
+    "intencion_clave": "fiebre, pus, dolor insoportable, sangrado abundante, me duele muchisimo",
+    "respuesta_validada": "🚨 **¡ALERTA DE EMERGENCIA!** 🚨 Su consulta activa una señal de alarma crítica. Por favor, **DEJE DE USAR EL CHAT** y comuníquese inmediatamente al número de emergencia o acuda al servicio de urgencias más cercano.",
+    "nivel_de_urgencia": "ALTO",
+    "tags": [
+      "emergencia",
+      "urgencia"
+    ]
+  },
+  {
+    "id_qa": "POSTOP_HERIDA_002",
+    "diagnostico": "Cuidado Post-Operatorio General",
+    "intencion_clave": "cuidado de la herida, cambio de aposito, cuando me quitan los puntos",
+    "respuesta_validada": "Mantenga la herida **limpia y completamente seca**. No la moje ni la sumerja hasta que los puntos sean retirados. El primer cambio de apósito debe ser realizado según indicación médica.",
+    "nivel_de_urgencia": "MEDIO",
+    "tags": [
+      "postop",
+      "cuidado"
+    ]
+  },
+  {
+    "id_qa": "MANEJO_DOLOR_003",
+    "diagnostico": "Manejo del Dolor",
+    "intencion_clave": "manejo del dolor, me duele, que puedo tomar para el dolor, pastillas",
+    "respuesta_validada": "Para el manejo del dolor, siga estrictamente la pauta indicada en su receta. Si el dolor es insoportable y no cede, active la alerta.",
+    "nivel_de_urgencia": "MEDIO",
+    "tags": [
+      "dolor",
+      "medicacion"
+    ]
+  }
+]
