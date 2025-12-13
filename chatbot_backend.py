@@ -1,5 +1,5 @@
 # =======================================================================
-# CHATBOT_BACKEND.PY - CONEXIÓN A GOOGLE SHEETS
+# CHATBOT_BACKEND.PY - CONEXIÓN A GOOGLE SHEETS + DEPURACIÓN
 # =======================================================================
 
 import json
@@ -34,7 +34,12 @@ Por favor, **LLAME INMEDIATAMENTE** a nuestra línea de emergencia.
 def preprocesar_texto(texto):
     texto = texto.lower()
     texto = ''.join([char for char in texto if char not in string.punctuation])
-    stop_words_es = stopwords.words('spanish')
+    try:
+        stop_words_es = stopwords.words('spanish')
+    except:
+        # Fallback por si NLTK falla en la nube
+        stop_words_es = ["el", "la", "los", "las", "un", "una", "y", "o", "de", "a", "en"]
+        
     palabras = texto.split()
     palabras_filtradas = [w for w in palabras if w not in stop_words_es]
     return ' '.join(palabras_filtradas)
@@ -52,7 +57,7 @@ def inicializar_vectorizador(df):
     return vectorizer, matriz_tfidf
 
 # -----------------------------------------------------------------------
-# 🔌 CONEXIÓN A GOOGLE SHEETS (NUEVO)
+# 🔌 CONEXIÓN A GOOGLE SHEETS (CON DEPURACIÓN VISUAL)
 # -----------------------------------------------------------------------
 def registrar_pregunta_en_sheets(consulta):
     """Conecta con Google Sheets y guarda la pregunta sin respuesta"""
@@ -64,19 +69,22 @@ def registrar_pregunta_en_sheets(consulta):
             # 2. Autenticar con Google
             gc = gspread.service_account_from_dict(creds_dict)
             
-            # 3. Abrir la hoja (Asegúrate de que se llame EXACTAMENTE así)
+            # 3. Abrir la hoja (Asegúrate de que se llame EXACTAMENTE así en Drive)
             sh = gc.open("Cerebro_Bot") 
             worksheet = sh.sheet1
             
             # 4. Escribir (Append)
             ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             worksheet.append_row([ahora, consulta])
+            
+            # ÉXITO: Mostramos un aviso pequeño
+            st.toast("✅ Pregunta guardada en Google Sheets", icon="📝")
         else:
-            print("⚠️ No se encontraron credenciales en st.secrets")
+            st.error("⚠️ ERROR: No encontré 'google_credentials' en los Secrets de Streamlit.")
             
     except Exception as e:
-        # Imprimimos el error en la consola de Streamlit para depurar si falla
-        print(f"❌ Error al guardar en Sheets: {e}")
+        # FALLO: Mostramos el error en rojo en el chat
+        st.error(f"❌ ERROR DE CONEXIÓN: {e}")
 
 # -----------------------------------------------------------------------
 # LÓGICA PRINCIPAL
@@ -96,34 +104,7 @@ def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.4):
         return df.iloc[mejor_sim_index]['respuesta_validada']
     else:
         # --- AQUÍ GUARDAMOS EN LA NUBE ---
-        def registrar_pregunta_en_sheets(consulta):
-    """Conecta con Google Sheets y guarda la pregunta sin respuesta"""
-    try:
-        # 1. Verificamos si existen las llaves
-        if "google_credentials" in st.secrets:
-            creds_dict = json.loads(st.secrets["google_credentials"])
-            
-            # 2. Autenticar
-            gc = gspread.service_account_from_dict(creds_dict)
-            
-            # 3. Abrir hoja
-            sh = gc.open("Cerebro_Bot") 
-            worksheet = sh.sheet1
-            
-            # 4. Escribir
-            ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            worksheet.append_row([ahora, consulta])
-            
-            # ÉXITO: Mostramos un aviso pequeño de que funcionó
-            st.toast("✅ Pregunta guardada en Google Sheets", icon="📝")
-            
-        else:
-            # FALLO 1: No hay secretos
-            st.error("⚠️ ERROR: No encontré 'google_credentials' en los Secrets de Streamlit.")
-            
-    except Exception as e:
-        # FALLO 2: Error técnico (Aquí saldrá el culpable)
-        st.error(f"❌ ERROR DE CONEXIÓN: {e}")
+        registrar_pregunta_en_sheets(consulta)
         return "Lo siento, aún no tengo esa información específica validada. **He guardado tu pregunta** para que el Dr. la revise y me enseñe pronto la respuesta."
 
 def revisar_guardrail_emergencia(consulta):
