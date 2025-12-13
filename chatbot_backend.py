@@ -89,6 +89,39 @@ def registrar_pregunta_en_sheets(consulta):
 # -----------------------------------------------------------------------
 # LÓGICA PRINCIPAL
 # -----------------------------------------------------------------------
+# --- Agrega esto justo antes de la función buscar_respuesta_tfidf ---
+FRASES_EMPATIA = [
+    "Entiendo tu inquietud. ",
+    "Es una pregunta muy común. ",
+    "Para tu tranquilidad, te comento: ",
+    "Haces bien en preguntar. ",
+    "Aquí tengo la información para eso: ",
+    "Claro, revisemos eso juntos. "
+]
+
+def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.4):
+    consulta_preprocesada = preprocesar_texto(consulta)
+    
+    if not consulta_preprocesada:
+        return "Por favor, dime un poco más para poder ayudarte."
+
+    consulta_vector = vectorizer.transform([consulta_preprocesada])
+    similitudes = cosine_similarity(consulta_vector, matriz_tfidf)
+    mejor_sim_score = similitudes.max()
+    mejor_sim_index = similitudes.argmax()
+    
+    if mejor_sim_score > umbral:
+        # AQUÍ ESTÁ LA MAGIA:
+        respuesta_medica = df.iloc[mejor_sim_index]['respuesta_validada']
+        
+        # Elegimos una frase amable al azar y la pegamos antes de la respuesta médica
+        preambulo = random.choice(FRASES_EMPATIA)
+        
+        return preambulo + respuesta_medica
+    else:
+        # Aquí también podemos ser más empáticos al fallar
+        registrar_pregunta_en_sheets(consulta)
+        return "Entiendo que esto es importante para ti, pero para no darte información incorrecta, prefiero que esta duda la consultes directo a la clínica. Ya dejé anotada tu pregunta para revisarla."
 def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.4):
     consulta_preprocesada = preprocesar_texto(consulta)
     
