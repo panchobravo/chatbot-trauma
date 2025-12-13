@@ -62,30 +62,28 @@ def inicializar_vectorizador(df):
 def registrar_pregunta_en_sheets(consulta):
     """Conecta con Google Sheets y guarda la pregunta sin respuesta"""
     try:
-        # 1. Recuperar la llave desde los Secretos de Streamlit
+        # 1. Recuperar la llave
         if "google_credentials" in st.secrets:
-            creds_dict = json.loads(st.secrets["google_credentials"])
+            # AL USAR FORMATO NATIVO, USAMOS dict()
+            creds_dict = dict(st.secrets["google_credentials"])
             
-            # 2. Autenticar con Google
+            # 2. Autenticar
             gc = gspread.service_account_from_dict(creds_dict)
             
-            # 3. Abrir la hoja (Asegúrate de que se llame EXACTAMENTE así en Drive)
-            sh = gc.open("Cerebro_Bot") 
+            # 3. Abrir la hoja
+            sh = gc.open("BotTrauma") 
             worksheet = sh.sheet1
             
-            # 4. Escribir (Append)
+            # 4. Escribir
             ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             worksheet.append_row([ahora, consulta])
             
-            # ÉXITO: Mostramos un aviso pequeño
             st.toast("✅ Pregunta guardada en Google Sheets", icon="📝")
         else:
-            st.error("⚠️ ERROR: No encontré 'google_credentials' en los Secrets de Streamlit.")
+            st.error("⚠️ ERROR: No encontré 'google_credentials' en los Secrets.")
             
     except Exception as e:
-        # FALLO: Mostramos el error en rojo en el chat
         st.error(f"❌ ERROR DE CONEXIÓN: {e}")
-
 # -----------------------------------------------------------------------
 # LÓGICA PRINCIPAL
 # -----------------------------------------------------------------------
