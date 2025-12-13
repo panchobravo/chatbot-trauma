@@ -96,7 +96,34 @@ def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.4):
         return df.iloc[mejor_sim_index]['respuesta_validada']
     else:
         # --- AQUÍ GUARDAMOS EN LA NUBE ---
-        registrar_pregunta_en_sheets(consulta)
+        def registrar_pregunta_en_sheets(consulta):
+    """Conecta con Google Sheets y guarda la pregunta sin respuesta"""
+    try:
+        # 1. Verificamos si existen las llaves
+        if "google_credentials" in st.secrets:
+            creds_dict = json.loads(st.secrets["google_credentials"])
+            
+            # 2. Autenticar
+            gc = gspread.service_account_from_dict(creds_dict)
+            
+            # 3. Abrir hoja
+            sh = gc.open("Cerebro_Bot") 
+            worksheet = sh.sheet1
+            
+            # 4. Escribir
+            ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            worksheet.append_row([ahora, consulta])
+            
+            # ÉXITO: Mostramos un aviso pequeño de que funcionó
+            st.toast("✅ Pregunta guardada en Google Sheets", icon="📝")
+            
+        else:
+            # FALLO 1: No hay secretos
+            st.error("⚠️ ERROR: No encontré 'google_credentials' en los Secrets de Streamlit.")
+            
+    except Exception as e:
+        # FALLO 2: Error técnico (Aquí saldrá el culpable)
+        st.error(f"❌ ERROR DE CONEXIÓN: {e}")
         return "Lo siento, aún no tengo esa información específica validada. **He guardado tu pregunta** para que el Dr. la revise y me enseñe pronto la respuesta."
 
 def revisar_guardrail_emergencia(consulta):
