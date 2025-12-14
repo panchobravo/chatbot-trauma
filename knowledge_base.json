@@ -62,7 +62,6 @@
       "nicotina", "tia", "mama", "papa", "visita", "esposo", 
       "mi familia", "fuman en casa", "vicio", "marihuana", "pito",
       "fumador pasivo"
-    ],
     "respuesta_validada": "La instrucción es una sola: **NO FUMAR, ni de forma activa ni pasiva.** \n\n1. **Activo:** El cigarro cierra los vasos sanguíneos y tu hueso NO pegará (pseudoartrosis). \n2. **Pasivo:** Si tu familia o visitas fuman cerca de ti, inhalas los mismos tóxicos y el daño es el mismo.\n\n**Tu responsabilidad como paciente** es exigir un ambiente libre de humo. No culpes a tus familiares si la herida se complica o el hueso no pega por el humo en casa; tú debes poner el límite tajante.",
     "nivel_urgencia": "bajo",
     "tags": ["cuidados generales", "factores de riesgo", "retardo consolidación", "habitos"]
