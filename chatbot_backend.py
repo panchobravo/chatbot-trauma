@@ -1,5 +1,5 @@
 # =======================================================================
-# CHATBOT_BACKEND.PY - V11.0 (ANTI-ALUCINACIONES & CONTEXTO ESTRICTO)
+# CHATBOT_BACKEND.PY - V11.1 (INTELIGENCIA + SHEETS RESTAURADO)
 # =======================================================================
 
 import json
@@ -112,7 +112,43 @@ def inicializar_vectorizador(df):
     return vectorizer, matriz_tfidf
 
 # -----------------------------------------------------------------------
-# 3. LÓGICA DE DECISIÓN
+# 3. CONEXIÓN A GOOGLE SHEETS (RESTAURADA)
+# -----------------------------------------------------------------------
+
+def conectar_sheets():
+    if "google_credentials" in st.secrets:
+        creds_dict = dict(st.secrets["google_credentials"])
+        gc = gspread.service_account_from_dict(creds_dict)
+        return gc.open("Cerebro_Bot")
+    return None
+
+def registrar_pregunta_en_sheets(consulta):
+    try:
+        sh = conectar_sheets()
+        if sh: sh.sheet1.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta])
+    except: pass
+
+def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
+    try:
+        sh = conectar_sheets()
+        if sh:
+            try: ws = sh.worksheet("Usuarios")
+            except: ws = sh.sheet1
+            ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), nombre, apellidos, rut, telefono, email])
+            return True
+    except: return False
+
+def registrar_feedback(consulta, respuesta, calificacion):
+    try:
+        sh = conectar_sheets()
+        if sh:
+            try: ws = sh.worksheet("Feedback")
+            except: ws = sh.add_worksheet(title="Feedback", rows=1000, cols=4)
+            ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta, respuesta[:50], calificacion])
+    except: pass
+
+# -----------------------------------------------------------------------
+# 4. LÓGICA DE DECISIÓN
 # -----------------------------------------------------------------------
 
 def revisar_guardrail_emergencia(consulta):
@@ -134,7 +170,7 @@ def buscar_respuesta_inteligente(consulta, df, vectorizer, matriz_tfidf, umbral=
     if len(palabras) <= 3:
         for palabra in palabras:
             if palabra in DICCIONARIO_SOCIAL:
-                return DICCIONARIO_SOCIAL[palabra], [] # Tags vacíos para limpiar contexto
+                return DICCIONARIO_SOCIAL[palabra], [] 
 
     # 2. Búsqueda Médica
     consulta_vec = vectorizer.transform([texto_norm])
@@ -146,12 +182,10 @@ def buscar_respuesta_inteligente(consulta, df, vectorizer, matriz_tfidf, umbral=
         respuesta_base = df.iloc[idx]['respuesta_validada']
         tags = df.iloc[idx].get('tags', [])
         
-        # Lógica de Preámbulo Dinámico
+        # Preámbulo según tono
         if detectar_groseria(consulta):
-            # Si hay "CTM", usamos frase corta o nula
             preambulo = random.choice(FRASES_URGENCIA)
         else:
-            # Si es educado, usamos frase empática
             preambulo = random.choice(FRASES_EMPATIA)
             
         return preambulo + respuesta_base, tags
@@ -164,14 +198,11 @@ def buscar_respuesta_inteligente(consulta, df, vectorizer, matriz_tfidf, umbral=
 
 def responder_consulta(consulta, df, vectorizer, matriz_tfidf, contexto_previo=""):
     
-    # ALERTA DE SEGURIDAD PRIMERO
+    # ALERTA
     if revisar_guardrail_emergencia(consulta):
-        return MENSAJE_ALERTA, [] # Limpiamos contexto en emergencia
+        return MENSAJE_ALERTA, [] 
     
-    # GESTIÓN DE CONTEXTO ESTRICTA (FIX DEL ARROZ)
-    # Solo agregamos contexto si la consulta es MUY corta (< 3 palabras)
-    # Ejemplo: "¿y eso duele?" (3 palabras) -> Agrega contexto.
-    # Ejemplo: "puedo comer arroz" (3 palabras) -> NO agrega contexto.
+    # CONTEXTO ESTRICTO (<3 palabras y existe contexto)
     texto_split = consulta.split()
     if len(texto_split) < 3 and contexto_previo:
         consulta_aumentada = f"{consulta} {contexto_previo}"
