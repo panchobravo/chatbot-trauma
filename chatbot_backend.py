@@ -1,5 +1,5 @@
 # =======================================================================
-# CHATBOT_BACKEND.PY - V5.2 "ENTENDIMIENTO EXPANDIDO"
+# CHATBOT_BACKEND.PY - V6.0 "TOLERANCIA A ERRORES Y TIPOS"
 # =======================================================================
 
 import json
@@ -42,7 +42,8 @@ CHARLA_SOCIAL = {
     
     # Estado del Dr.
     "como esta el doctor": "¡El Dr. está a mil por hora operando! Pero me dejó encargado de cuidarlos. ¿Tú cómo sigues?",
-    
+    "donde esta el doctor": "Probablemente en pabellón, pero yo tengo acceso a sus protocolos.",
+
     # Agradecimientos
     "gracias": "¡De nada! Estamos remando juntos en esto. 💪",
     "muchas gracias": "Un placer. Cualquier cosa chica que te preocupe, escríbeme.",
@@ -54,22 +55,23 @@ CHARLA_SOCIAL = {
     # Errores
     "te equivocaste": "¡Ups! Tienes razón, a veces aprendo lento. Gracias por la paciencia.",
     
-    # PREGUNTAS DE APERTURA (NUEVO)
+    # PREGUNTAS DE APERTURA
     "tengo una duda": "Para eso estoy. Cuéntame, ¿qué te preocupa?",
     "quiero hacer una consulta": "Adelante, soy todo oídos. ¿Qué pasó?",
     "puedo hacer una pregunta": "¡Claro que sí! Pregunta con confianza.",
-    "sabes algo": "Sé bastante sobre tu recuperación. Ponme a prueba. 😉",
     "necesito ayuda": "Aquí estoy. ¿Es algo urgente o una duda sobre el tratamiento?"
 }
 
 RESPUESTAS_EMOCIONALES = {
-    "mal": "Uhh, siento escuchar eso. La recuperación es una montaña rusa, hay días malos. ¿Es mucho dolor o es el encierro?",
-    "mas o menos": "Te entiendo. Esos días 'ni fu ni fa' son pesados. ¿Te duele algo puntual o es cansancio general?",
-    "asustado": "Es súper normal tener miedo, sobre todo después de una cirugía. Aquí estamos para darte seguridad. ¿Qué síntoma te asusta?",
-    "tengo miedo": "Tranquilo/a. El miedo es normal, pero no dejes que te paralice. Cuéntame qué sientes y lo revisamos.",
-    "triste": "Ánimo... Sé que es difícil estar quieto/a tanto tiempo, pero piensa que cada día es uno menos para el alta. 💪",
-    "bien": "¡Qué alegría leer eso! Esas son las noticias que nos gusta recibir. Sigue así.",
-    "mejor": "¡Excelente! Significa que el cuerpo está haciendo su trabajo. No bajemos la guardia eso sí."
+    "mal": "Uhh, siento escuchar eso. La recuperación es una montaña rusa. ¿Es mucho dolor físico?",
+    "pésimo": "Lo siento mucho. Hay días muy duros. ¿Necesitas revisar tu medicación?",
+    "regular": "Te entiendo, esos días 'ni fu ni fa' cansan mucho. ¿Te duele algo puntual?",
+    "mas o menos": "Ánimo. Es normal no estar al 100% todavía. ¿Cómo va el dolor del 1 al 10?",
+    "asustado": "El miedo es normal post-cirugía. No estás solo/a. ¿Qué síntoma te preocupa?",
+    "tengo miedo": "Tranquilo/a. Cuéntame qué sientes exactamente y lo revisamos juntos.",
+    "triste": "Ánimo... Sé que es difícil estar quieto/a, pero cada día falta menos. 💪",
+    "bien": "¡Qué alegría! Esas noticias nos dan energía a todo el equipo.",
+    "mejor": "¡Excelente! Significa que vamos por buen camino. Sigue cuidándote."
 }
 
 FRASES_EMPATIA = [
@@ -92,18 +94,11 @@ def preprocesar_texto(texto):
     if not isinstance(texto, str):
         return ""
     texto = texto.lower()
+    # Mantenemos solo letras y números, eliminamos puntuación
     texto = ''.join([char for char in texto if char not in string.punctuation])
-    try:
-        stop_words_es = stopwords.words('spanish')
-    except:
-        stop_words_es = ["el", "la", "los", "las", "un", "una", "y", "o", "de", "a", "en", "que", "me", "mi", "mis", "con", "por", "para"]
-    
-    palabras = texto.split()
-    palabras_filtradas = [w for w in palabras if w not in stop_words_es]
-    return ' '.join(palabras_filtradas)
+    return texto
 
 def combinar_columnas(row):
-    """Función auxiliar para evitar errores de sintaxis en lambdas complejas"""
     parte1 = str(row['intencion_clave'])
     parte2 = " ".join(row['palabras_clave'])
     tags = row.get('tags', [])
@@ -117,15 +112,17 @@ def cargar_y_preparar_base(archivo_json):
     with open(archivo_json, 'r', encoding='utf-8') as f:
         data = json.load(f)
     df = pd.DataFrame(data)
-    
-    # Usamos la función auxiliar en lugar de lambda
     df['texto_busqueda'] = df.apply(combinar_columnas, axis=1)
-    
+    # Preprocesamos, pero OJO: el vectorizador hará el trabajo pesado de los typos
     df['intencion_preprocesada'] = df['texto_busqueda'].apply(preprocesar_texto)
     return df
 
 def inicializar_vectorizador(df):
-    vectorizer = TfidfVectorizer()
+    # --- LA MAGIA CONTRA LOS TYPOS ---
+    # analyzer='char_wb': Analiza grupos de letras, no palabras enteras.
+    # ngram_range=(3, 5): Busca coincidencias de 3, 4 y 5 letras.
+    # Esto permite que "funmar" coincida con "fumar" porque comparten "fumar", "uma", "mar".
+    vectorizer = TfidfVectorizer(analyzer='char_wb', ngram_range=(3, 5))
     matriz_tfidf = vectorizer.fit_transform(df['intencion_preprocesada'])
     return vectorizer, matriz_tfidf
 
@@ -166,23 +163,29 @@ def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
 # 4. LÓGICA DE RESPUESTA
 # -----------------------------------------------------------------------
 
-def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.20):
+def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.15): 
+    # Bajamos umbral a 0.15 porque la búsqueda por caracteres da scores más bajos pero más precisos
     
     consulta_clean = consulta.lower().strip()
-    palabras_usuario = consulta_clean.split()
+    # Quitamos puntuación para la lógica social también
+    consulta_limpia_social = ''.join([c for c in consulta_clean if c not in string.punctuation])
+    palabras_usuario = consulta_limpia_social.split()
 
-    # Filtro Social (Solo si es corto)
-    if len(palabras_usuario) < 5: 
+    # 1. FILTRO SOCIAL (Tolerante)
+    # Subimos el límite a 12 palabras para aguantar frases como "mmm otra vez eres un robot"
+    if len(palabras_usuario) < 12: 
         for frase, respuesta in CHARLA_SOCIAL.items():
-            if frase in consulta_clean:
+            if frase in consulta_limpia_social:
                 return respuesta
 
-    # Filtro Emocional
+    # 2. FILTRO EMOCIONAL (Exacto)
+    # Buscamos la palabra EXACTA en la lista de palabras del usuario
+    # Así "animal" no activa "mal".
     for emocion, respuesta in RESPUESTAS_EMOCIONALES.items():
-        if emocion in consulta_clean:
+        if emocion in palabras_usuario: # <--- CAMBIO CLAVE: Búsqueda exacta en lista
             return respuesta
 
-    # Búsqueda Médica
+    # 3. BÚSQUEDA MÉDICA (Fuzzy / Typos)
     consulta_preprocesada = preprocesar_texto(consulta)
     
     if not consulta_preprocesada:
