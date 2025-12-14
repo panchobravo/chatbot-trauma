@@ -3,7 +3,7 @@
     "id_qa": "GENERAL_BIENVENIDA",
     "diagnostico": "Bienvenida e Instrucciones Generales",
     "intencion_clave": "hola, que haces, ayuda, bienvenido, inicio",
-    "palabras_clave": ["hola", "buenos días", "ayuda", "quienes son", "bot", "buenas tardes", "holis"],
+    "palabras_clave": ["hola", "buenos días", "ayuda", "quienes son", "bot", "buenas tardes", "holis", "alo"],
     "respuesta_validada": "¡Hola! Qué bueno saludarte. Bienvenidos a nuestro chat del Equipo de Cirugía de Tobillo y Pie de la Mutual de Seguridad. Estamos aquí para acompañarte en esta recuperación (que sabemos requiere mucha paciencia) y recordarte los cuidados que detallamos en tu epicrisis. Cualquier duda, aquí estamos para guiarte.",
     "nivel_de_urgencia": "BAJO",
     "tags": ["inicio", "general"]
@@ -46,4 +46,44 @@
   },
   {
     "id_qa": "LOGISTICA_RADIOGRAFIAS",
-    "diagn
+    "diagnostico": "Flujo de Atención con Radiografías",
+    "intencion_clave": "donde me tomo la radiografia, tengo control con rayos, llego antes",
+    "palabras_clave": ["rayos", "rx", "radiografía", "control", "admisión", "llegada", "imagen"],
+    "respuesta_validada": "Para tu control con radiografías, hagámoslo eficiente: cuando llegues, avisa en admisión y pasa directo a tomarte la radiografía **ANTES** de entrar a la consulta. Así, cuando entres a vernos, ya tendremos las imágenes en pantalla y no tendrás que esperar doble. ¡Nos ayudas mucho a todos con esto!",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["administrativo", "control"]
+  },
+  {
+    "id_qa": "NO_FUMAR",
+    "diagnostico": "Indicaciones en relacion a Tabaquismo y/o Drogas",
+    "intencion_clave": "prohibición estricta de tabaco activo y pasivo",
+    "palabras_clave": ["fumar", "cigarrillo", "tabaco", "fuman", "humo", "vapeador", "nicotina", "tia", "mama", "papa", "visita", "esposo", "mi familia", "fuman en casa", "vicio", "marihuana", "pito", "fumador pasivo"],
+    "respuesta_validada": "La instrucción es una sola: **NO FUMAR, ni de forma activa ni pasiva.** 1. **Activo:** El cigarro cierra los vasos sanguíneos y tu hueso NO pegará (pseudoartrosis). 2. **Pasivo:** Si tu familia o visitas fuman cerca de ti, inhalas los mismos tóxicos y el daño es el mismo. **Tu responsabilidad como paciente** es exigir un ambiente libre de humo. No culpes a tus familiares si la herida se complica o el hueso no pega por el humo en casa; tú debes poner el límite tajante.",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["cuidados generales", "factores de riesgo", "retardo consolidación", "habitos"]
+  },
+  {
+    "id_qa": "USO_BOTA_CAM",
+    "diagnostico": "Uso de Bota CAM / Zapato Postop",
+    "intencion_clave": "bota, dormir con bota, me puedo sacar la bota, zapato postoperatorio",
+    "palabras_clave": ["bota", "cam walker", "dormir", "noche", "velcro", "ortesis", "zapato"],
+    "respuesta_validada": "Respecto a la bota o zapato especial: Úsala siempre durante el día y para cualquier traslado. En la noche, para que descanses mejor, te la puedes soltar un poco (aflojar velcros), pero no te la saques completamente a menos que te lo hayamos indicado, ya que protege el pie de movimientos bruscos mientras sueñas.",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["ortesis", "cuidados"]
+  },
+  {
+    "id_qa": "DESCARGA_EXTREMIDAD",
+    "diagnostico": "Carga de Peso (Descarga)",
+    "intencion_clave": "puedo pisar, apoyar, muletas, carga, caminar",
+    "palabras_clave": ["pisar", "apoyar", "carga", "tocar suelo", "caminar", "peso", "muleta"],
+    "respuesta_validada": "En general, y salvo que tu epicrisis diga otra cosa, mantenemos la indicación de 'descarga'. Esto significa **NO apoyar** el pie operado en el suelo bajo ninguna circunstancia. Usa tus muletas o andador. Apoyar antes de tiempo puede desplazar la fractura o dañar la cirugía irreparablemente.",
+    "nivel_de_urgencia": "ALTO",
+    "tags": ["postop", "movilidad", "seguridad"]
+  },
+  {
+    "id_qa": "SINTOMA_DOLOR_PUNZANTE",
+    "diagnostico": "Dolor al bajar el pie",
+    "intencion_clave": "punzada, latido, bajar la pierna, sangre a la cabeza, dolor al pararse",
+    "palabras_clave": ["punzada", "latido", "bajar la pierna", "dolor al pararse", "sangre", "bajar el pie"],
+    "respuesta_validada": "Te entendemos perfectamente, es una sensación muy desagradable, como si la sangre se fuera de golpe al pie. Es súper normal en nuestras cirugías de pie y tobillo porque la gravedad hace lo suyo. El truco es no bajar la pierna de golpe; si te vas a levantar, siéntate un momento antes y mueve los dedos para activar la circulación antes de ponerte de pie.",
+    "nivel_de_urgencia
