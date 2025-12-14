@@ -58,7 +58,7 @@
     "diagnostico": "Indicaciones en relacion a Tabaquismo y/o Drogas",
     "intencion_clave": "prohibición estricta de tabaco activo y pasivo",
     "palabras_clave": ["fumar", "cigarrillo", "tabaco", "fuman", "humo", "vapeador", "nicotina", "tia", "mama", "papa", "visita", "esposo", "mi familia", "fuman en casa", "vicio", "marihuana", "pito", "fumador pasivo"],
-    "respuesta_validada": "La instrucción es una sola: **NO FUMAR, ni de forma activa ni pasiva.** 1. **Activo:** El cigarro cierra los vasos sanguíneos y tu hueso NO pegará (pseudoartrosis). 2. **Pasivo:** Si tu familia o visitas fuman cerca de ti, inhalas los mismos tóxicos y el daño es el mismo. **Tu responsabilidad como paciente** es exigir un ambiente libre de humo. No culpes a tus familiares si la herida se complica o el hueso no pega por el humo en casa; tú debes poner el límite tajante.",
+    "respuesta_validada": "La instrucción es una sola: **NO FUMAR, ni de forma activa ni pasiva.**\\n\\n1. **Activo:** El cigarro cierra los vasos sanguíneos y tu hueso NO pegará (pseudoartrosis).\\n2. **Pasivo:** Si tu familia o visitas fuman cerca de ti, inhalas los mismos tóxicos y el daño es el mismo.\\n\\n**Tu responsabilidad como paciente** es exigir un ambiente libre de humo. No culpes a tus familiares si la herida se complica o el hueso no pega por el humo en casa; tú debes poner el límite tajante.",
     "nivel_de_urgencia": "BAJO",
     "tags": ["cuidados generales", "factores de riesgo", "retardo consolidación", "habitos"]
   },
@@ -86,4 +86,17 @@
     "intencion_clave": "punzada, latido, bajar la pierna, sangre a la cabeza, dolor al pararse",
     "palabras_clave": ["punzada", "latido", "bajar la pierna", "dolor al pararse", "sangre", "bajar el pie"],
     "respuesta_validada": "Te entendemos perfectamente, es una sensación muy desagradable, como si la sangre se fuera de golpe al pie. Es súper normal en nuestras cirugías de pie y tobillo porque la gravedad hace lo suyo. El truco es no bajar la pierna de golpe; si te vas a levantar, siéntate un momento antes y mueve los dedos para activar la circulación antes de ponerte de pie.",
-    "nivel_de_urgencia
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["sintomas", "dolor"]
+  },
+  {
+    "id_qa": "SINTOMA_DEDOS_MORADOS",
+    "diagnostico": "Cambios de coloración",
+    "intencion_clave": "dedos negros, dedos morados, color oscuro, cambio de color",
+    "palabras_clave": ["dedos negros", "dedos morados", "color oscuro", "cambio de color", "rojo oscuro", "cianosis"],
+    "respuesta_validada": "No te asustes si ves los dedos un poco más oscuros o morados cuando bajas el pie, es por lo mismo que hablábamos de la gravedad y la cirugía reciente. Lo importante es que, al volver a poner el pie en alto sobre los cojines, recuperen su color rosadito normal en unos minutos. Si se quedan pálidos o morados estando en alto, ahí sí debes ir al servicio de urgencia más cercano.",
+    "nivel_de_urgencia": "MEDIO",
+    "tags": ["sintomas", "circulacion"]
+  },
+  {
+    "id_qa": "SIGNOS_TROMB
