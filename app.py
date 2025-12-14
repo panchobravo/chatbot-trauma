@@ -1,89 +1,110 @@
-# =======================================================================
-# APP.PY - INTERFAZ DE USUARIO (FRONT-END STREAMLIT)
-# =======================================================================
-
 import streamlit as st
-import nltk
-nltk.download('stopwords')
-# Importamos las funciones necesarias de nuestro archivo de lógica central
 from chatbot_backend import (
     cargar_y_preparar_base, 
     inicializar_vectorizador, 
-    responder_consulta
+    responder_consulta, 
+    registrar_pregunta_en_sheets
+)
+import time
+
+# -----------------------------------------------------------------------------
+# 1. CONFIGURACIÓN DE PÁGINA (ESTÉTICA PRO)
+# -----------------------------------------------------------------------------
+st.set_page_config(
+    page_title="Asistente Traumatología",  # Título en la pestaña del navegador
+    page_icon="🏥",                       # Ícono en la pestaña
+    layout="centered",
+    initial_sidebar_state="collapsed"
 )
 
-# -----------------------------------------------------------------------
-# 1. INICIALIZACIÓN Y CARGA DE MODELO (CACHÉ)
-# -----------------------------------------------------------------------
-
-@st.cache_resource
-def inicializar_chatbot():
-    """
-    Carga la Base de Conocimiento y entrena el modelo TF-IDF. 
-    @st.cache_resource asegura que esto solo se ejecute una vez al inicio, 
-    ahorrando tiempo y recursos (clave para la solución low cost).
-    """
-    try:
-        # 1. Cargar y preprocesar los datos desde el JSON
-        base_datos = cargar_y_preparar_base('knowledge_base.json')
-        
-        # 2. Inicializar el vectorizador TF-IDF con los datos cargados
-        tfidf_vectorizer, tfidf_matriz = inicializar_vectorizador(base_datos)
-        
-        return base_datos, tfidf_vectorizer, tfidf_matriz
+# -----------------------------------------------------------------------------
+# 2. ESTILO CSS (OCULTAR MARCAS DE STREAMLIT)
+# -----------------------------------------------------------------------------
+# Esto oculta el menú de hamburguesa, el pie de página y ajusta colores
+st.markdown("""
+<style>
+    /* Ocultar menú de hamburguesa superior derecho */
+    #MainMenu {visibility: hidden;}
+    /* Ocultar pie de página "Made with Streamlit" */
+    footer {visibility: hidden;}
+    /* Ocultar barra de decoración superior */
+    header {visibility: hidden;}
     
-    except FileNotFoundError:
-        st.error("Error: Archivo 'knowledge_base.json' no encontrado. Asegúrese de que esté en el directorio correcto.")
-        return None, None, None
-    except Exception as e:
-        st.error(f"Error al inicializar el chatbot: {e}")
-        return None, None, None
+    /* Estilo del chat */
+    .stChatMessage {
+        border-radius: 15px;
+        padding: 10px;
+    }
+</style>
+""", unsafe_allow_html=True)
 
+# -----------------------------------------------------------------------------
+# 3. BARRA LATERAL (INFORMACIÓN FIJA)
+# -----------------------------------------------------------------------------
+with st.sidebar:
+    st.header("🏥 Consulta Virtual")
+    st.markdown("---")
+    st.write("**Dr. [Equipo de Traumatologos de Tobillo y Pie]**")
+    st.write("Traumatología y Ortopedia")
+    st.markdown("---")
+    st.info(
+        "ℹ️ **Nota:** Este asistente responde dudas frecuentes post-operatorias. "
+        "No reemplaza una consulta de urgencia."
+    )
+    st.error("🚨 **Emergencias:** Si tienes fiebre alta, dolor incontrolable o sangrado, acude a Urgencias inmediatamente.")
 
-# Llamada a la función de inicialización
-df_base, vectorizer, matriz_tfidf = inicializar_chatbot()
+# -----------------------------------------------------------------------------
+# 4. INICIALIZACIÓN DEL CEREBRO
+# -----------------------------------------------------------------------------
+@st.cache_resource
+def iniciar_cerebro():
+    df = cargar_y_preparar_base('knowledge_base.json')
+    vec, mat = inicializar_vectorizador(df)
+    return df, vec, mat
 
-# -----------------------------------------------------------------------
-# 2. CONFIGURACIÓN DEL DISEÑO DE LA APLICACIÓN
-# -----------------------------------------------------------------------
+try:
+    df, vectorizer, matriz_tfidf = iniciar_cerebro()
+except Exception as e:
+    st.error(f"Error cargando el cerebro: {e}")
+    st.stop()
 
-st.set_page_config(page_title="Asistente de Traumatología", layout="wide")
-st.title("👨‍⚕️ Asistente Digital de Traumatología")
-st.markdown("---")
-st.warning("⚠️ **Importante:** Este prototipo proporciona información validada por su especialista. **NO REEMPLAZA UNA CONSULTA MÉDICA**. Pruebe la seguridad escribiendo 'fiebre'.")
+# -----------------------------------------------------------------------------
+# 5. INTERFAZ DE CHAT (TIPO WHATSAPP)
+# -----------------------------------------------------------------------------
 
-# -----------------------------------------------------------------------
-# 3. LÓGICA DEL CHAT (INTERACCIÓN)
-# -----------------------------------------------------------------------
+# Título Principal
+st.title("👨‍⚕️ Asistente Dr. [Equipo de Traumatologos de Tobillo y Pie]")
+st.markdown("Hola, soy tu asistente virtual. ¿En qué puedo orientarte hoy sobre tu recuperación?")
 
-if df_base is not None:
-    # 3.1. Inicializar el Historial de Chat
-    # Usamos st.session_state para guardar la conversación entre interacciones
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-        # Mensaje de bienvenida inicial del asistente
-        st.session_state.messages.append(
-            {"role": "assistant", "content": "¿Hola! Soy tu asistente. ¿Sobre qué quieres consultar hoy? (ej. Cuidado de herida, cuándo caminar)"}
-        )
+# Historial de Chat
+if "mensajes" not in st.session_state:
+    st.session_state.mensajes = []
 
-    # 3.2. Mostrar Mensajes Previos en Pantalla
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+# Mostrar mensajes anteriores
+for mensaje in st.session_state.mensajes:
+    with st.chat_message(mensaje["rol"]):
+        st.markdown(mensaje["contenido"])
 
-    # 3.3. Manejar la Entrada del Usuario
-    if prompt := st.chat_input("Escribe tu pregunta aquí..."):
+# Input del usuario
+prompt = st.chat_input("Escribe tu duda aquí...")
+
+if prompt:
+    # 1. Guardar y mostrar mensaje del usuario
+    st.session_state.mensajes.append({"rol": "user", "contenido": prompt})
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # 2. Pensando... (Efecto visual)
+    with st.chat_message("assistant"):
+        placeholder = st.empty()
+        placeholder.markdown("🩺 *Analizando consulta...*")
+        time.sleep(0.5) # Pequeña pausa para naturalidad
+
+        # 3. Obtener respuesta
+        respuesta = responder_consulta(prompt, df, vectorizer, matriz_tfidf)
         
-        # 1. Agregar la consulta del usuario al historial y mostrarla
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        # 2. Llamar a la función de respuesta del backend (que incluye el Guardrail y TF-IDF)
-        respuesta = responder_consulta(prompt, df_base, vectorizer, matriz_tfidf)
-        
-        # 3. Mostrar respuesta del asistente en pantalla y guardarla en el historial
-        with st.chat_message("assistant"):
-            st.markdown(respuesta)
-        
-        st.session_state.messages.append({"role": "assistant", "content": respuesta})
+        # 4. Mostrar respuesta
+        placeholder.markdown(respuesta)
+    
+    # 5. Guardar en historial
+    st.session_state.mensajes.append({"rol": "assistant", "contenido": respuesta})
