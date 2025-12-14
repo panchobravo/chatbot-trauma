@@ -58,7 +58,7 @@
     "diagnostico": "Indicaciones en relacion a Tabaquismo y/o Drogas",
     "intencion_clave": "prohibición estricta de tabaco activo y pasivo",
     "palabras_clave": ["fumar", "cigarrillo", "tabaco", "fuman", "humo", "vapeador", "nicotina", "tia", "mama", "papa", "visita", "esposo", "mi familia", "fuman en casa", "vicio", "marihuana", "pito", "fumador pasivo"],
-    "respuesta_validada": "La instrucción es una sola: **NO FUMAR, ni de forma activa ni pasiva.**\\n\\n1. **Activo:** El cigarro cierra los vasos sanguíneos y tu hueso NO pegará (pseudoartrosis).\\n2. **Pasivo:** Si tu familia o visitas fuman cerca de ti, inhalas los mismos tóxicos y el daño es el mismo.\\n\\n**Tu responsabilidad como paciente** es exigir un ambiente libre de humo. No culpes a tus familiares si la herida se complica o el hueso no pega por el humo en casa; tú debes poner el límite tajante.",
+    "respuesta_validada": "La instrucción es una sola: **NO FUMAR, ni de forma activa ni pasiva.** \n\n1. **Activo:** El cigarro cierra los vasos sanguíneos y tu hueso NO pegará (pseudoartrosis). \n2. **Pasivo:** Si tu familia o visitas fuman cerca de ti, inhalas los mismos tóxicos y el daño es el mismo.\n\n**Tu responsabilidad como paciente** es exigir un ambiente libre de humo. No culpes a tus familiares si la herida se complica o el hueso no pega por el humo en casa; tú debes poner el límite tajante.",
     "nivel_de_urgencia": "BAJO",
     "tags": ["cuidados generales", "factores de riesgo", "retardo consolidación", "habitos"]
   },
@@ -99,4 +99,138 @@
     "tags": ["sintomas", "circulacion"]
   },
   {
-    "id_qa": "SIGNOS_TROMB
+    "id_qa": "SIGNOS_TROMBOSIS",
+    "diagnostico": "Alerta de Trombosis",
+    "intencion_clave": "dolor pantorrilla, calambre fuerte, trombosis, coágulo, dolor gemelo",
+    "palabras_clave": ["dolor pantorrilla", "calambre fuerte", "trombosis", "coágulo", "dolor gemelo", "falta de aire", "pecho"],
+    "respuesta_validada": "En cirugía de pierna esto es muy importante. Si sientes un dolor profundo en la pantorrilla (el gemelo), como un calambre que no se pasa, o si te falta el aire de la nada, no esperes. Ve al **servicio de urgencia más cercano** para que te hagan una eco. Es mejor pecar de exagerado que ignorar una posible trombosis. Recuerda usar tu tromboprofilaxis (anticoagulante) si te la indicamos.",
+    "nivel_de_urgencia": "ALTO",
+    "tags": ["emergencia", "trombosis"]
+  },
+  {
+    "id_qa": "ELEVACION_PIERNA",
+    "diagnostico": "Manejo de Hinchazón",
+    "intencion_clave": "hinchazón persistente, pie de elefante, balon, edema",
+    "palabras_clave": ["hinchado", "inflamado", "edema", "pie de elefante", "balón", "alto", "elevar"],
+    "respuesta_validada": "El tobillo y el pie son traicioneros con la hinchazón, pueden tardar meses en verse 'secos'. Mantén la pierna en alto la mayor parte del tiempo. La gravedad manda: si bajas el pie, se hincha. Si lo subes (dedos más altos que la nariz), se alivia. ¡Ayúdanos con eso!",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["cuidados", "confort"]
+  },
+  {
+    "id_qa": "SINTOMA_MANCHA_SANGRE",
+    "diagnostico": "Sangrado en vendaje",
+    "intencion_clave": "mancha, sangre, apósito sucio, sangrando, rojo",
+    "palabras_clave": ["mancha", "sangre", "apósito sucio", "sangrando", "rojo", "drenaje"],
+    "respuesta_validada": "Si ves una mancha de sangre en el vendaje, mantén la calma, es esperable que la herida drene un poco las primeras 48 horas. Marca el contorno de la mancha con un lápiz pasta. Si ves que la mancha sobrepasa esa línea rápidamente o gotea sangre fresca, parte directo al servicio de urgencia más cercano.",
+    "nivel_de_urgencia": "MEDIO",
+    "tags": ["herida", "alarma"]
+  },
+  {
+    "id_qa": "MEDICAMENTOS_CRONICOS",
+    "diagnostico": "Manejo de Fármacos Habituales",
+    "intencion_clave": "remedios de la presion, pastillas de antes, diabetes, tiroides",
+    "palabras_clave": ["crónicos", "presión", "diabetes", "tiroides", "medicamentos habituales", "hipertensión"],
+    "respuesta_validada": "Tus remedios de siempre (para la presión, diabetes, tiroides, etc.) síguelos tomando en tus horarios habituales y dosis de siempre, a menos que en tu documento de alta (epicrisis) hayamos escrito explícitamente algún cambio.",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["medicacion", "cronicos"]
+  },
+  {
+    "id_qa": "CREMAS_POMADAS",
+    "diagnostico": "Restricción de Productos Tópicos",
+    "intencion_clave": "crema, pomada, matico, aloe vera, cicatrizante",
+    "palabras_clave": ["crema", "pomada", "aceite", "ungüento", "herida", "casero", "matico", "aloe"],
+    "respuesta_validada": "Por favor, no te apliques cremas, pomadas, aceites ni 'remedios caseros' en la herida o el pie. Solo usa lo que esté escrito en tu indicación de alta. La piel está delicada y queremos evitar infecciones o reacciones alérgicas.",
+    "nivel_de_urgencia": "MEDIO",
+    "tags": ["herida", "cuidados"]
+  },
+  {
+    "id_qa": "LICENCIA_MEDICA",
+    "diagnostico": "Reposo Laboral",
+    "intencion_clave": "licencia, trabajo, volver a trabajar, reposo, días",
+    "palabras_clave": ["licencia", "trabajo", "volver a trabajar", "reposo", "días", "comppin"],
+    "respuesta_validada": "Sabemos que preocupa el tema laboral, pero las cirugías de pie y tobillo requieren paciencia. El reposo laboral es parte del tratamiento. Vamos a ir renovando la licencia paso a paso en cada control, así que tranquilo/a, te cubriremos el tiempo que sea médicamente necesario.",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["administrativo", "legal"]
+  },
+  {
+    "id_qa": "CONDUCCION_VEHICULO",
+    "diagnostico": "Restricción de Conducción",
+    "intencion_clave": "manejar, conducir, auto, coche, automático, seguro",
+    "palabras_clave": ["manejar", "conducir", "auto", "coche", "automático", "volante", "seguro", "licencia"],
+    "respuesta_validada": "La respuesta es NO. Mientras estés con licencia médica (reposo laboral), legal y médicamente NO puedes conducir. Tu tiempo de reacción es más lento por el dolor o medicamentos, y si participas en un accidente (aunque no sea tu culpa), el seguro NO te cubrirá y tendrás problemas legales graves. No te arriesgues hasta tener el alta laboral definitiva.",
+    "nivel_de_urgencia": "MEDIO",
+    "tags": ["seguridad", "transporte", "legal"]
+  },
+  {
+    "id_qa": "EDUCACION_ESCALERAS",
+    "diagnostico": "Uso de Muletas en Escaleras",
+    "intencion_clave": "escaleras, subir, bajar, peldaños, gradas",
+    "palabras_clave": ["escaleras", "subir", "bajar", "peldaños", "gradas", "muletas"],
+    "respuesta_validada": "Acuérdate de esta regla de oro: 'Lo bueno sube al cielo, lo malo baja al infierno'. Para subir escaleras, sube primero la pierna sana (la buena) y luego las muletas con la operada. Para bajar, baja primero las muletas con la pierna operada (la mala) y luego la sana. ¡Y apóyate en la baranda siempre que puedas!",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["movilidad", "educacion"]
+  },
+  {
+    "id_qa": "SINTOMA_PICAZON",
+    "diagnostico": "Manejo de Picazón (Prurito)",
+    "intencion_clave": "pica, rascar, palillo, comezón, desesperado",
+    "palabras_clave": ["pica", "rascar", "palillo", "comezón", "desesperado", "dentro del yeso"],
+    "respuesta_validada": "¡No metas nada dentro del yeso! Ni lápices, ni reglas, ni agujas de tejer. La piel está sensible y si te haces una herida no la vamos a ver hasta que se infecte. Si te pica mucho, prueba tirando aire frío con el secador de pelo por los bordes, suele aliviar bastante.",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["confort", "cuidados"]
+  },
+  {
+    "id_qa": "ANESTESIA_BLOQUEO",
+    "diagnostico": "Duración de Anestesia/Bloqueo",
+    "intencion_clave": "dedos dormidos, no siento el pie, anestesia, bloqueo, cuánto dura",
+    "palabras_clave": ["dedos dormidos", "no siento el pie", "anestesia", "bloqueo", "cuánto dura", "insensible"],
+    "respuesta_validada": "Si todavía no sientes el pie o la pierna, ¡es una buena noticia! Significa que el bloqueo anestésico sigue funcionando y te está ahorrando dolor. Puede durar hasta 24 horas. Aprovecha de empezar a tomar los analgésicos orales ahora, para que cuando se despierte el pie, ya tengas cobertura de dolor.",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["sintomas", "anestesia"]
+  },
+  {
+    "id_qa": "SINTOMA_MOVILIDAD_DEDOS",
+    "diagnostico": "Ejercicios de dedos",
+    "intencion_clave": "mover dedos, ejercicios, quieto, inmovilizado",
+    "palabras_clave": ["mover dedos", "ejercicios", "quieto", "inmovilizado"],
+    "respuesta_validada": "Aunque tengas el tobillo inmovilizado, los dedos son libres ¡y necesitamos que los muevas! Trata de moverlos como si quisieras agarrar una sábana con ellos. Esto funciona como una bomba muscular que ayuda a sacar el líquido del pie y baja la hinchazón. Hazlo varias veces cada hora.",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["ejercicios", "rehabilitacion"]
+  },
+  {
+    "id_qa": "CU_JUANETES_SEPARADOR",
+    "diagnostico": "Cuidados Específicos Hallux Valgus",
+    "intencion_clave": "separador, juanete, hallux, dedo gordo, vendaje",
+    "palabras_clave": ["separador", "juanete", "hallux", "dedo gordo", "vendaje"],
+    "respuesta_validada": "Si te operamos de Juanetes (Hallux Valgus), es vital mantener el dedo gordo en su nueva posición. Si se te cae el separador o el vendaje que mantiene el dedo separado del segundo dedo, avísanos o trata de reposicionarlo suavemente. Esa separación es clave para que no vuelva a deformarse.",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["postop", "especifico"]
+  },
+  {
+    "id_qa": "SINTOMA_PARESTESIAS",
+    "diagnostico": "Sensación de corrientes",
+    "intencion_clave": "corriente, electricidad, chispazo, nervio, descarga",
+    "palabras_clave": ["corriente", "electricidad", "chispazo", "nervio", "descarga"],
+    "respuesta_validada": "A veces, mientras los nervios se despiertan o se recuperan de la inflamación, puedes sentir 'chispazos' o corrientes eléctricas repentinas. Si son ocasionales, es normal, es el nervio 'reiniciándose'. Si es un dolor quemante constante que no te deja vivir, cuéntanos en el control.",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["sintomas", "neurologico"]
+  },
+  {
+    "id_qa": "PREVENCION_TALON",
+    "diagnostico": "Prevención de Ulceras en Talón",
+    "intencion_clave": "talón, ardor, quemazón, escara, apoyo talón",
+    "palabras_clave": ["talón", "ardor", "quemazón", "escara", "apoyo talón", "úlcera"],
+    "respuesta_validada": "Ojo con el talón. Si sientes ardor o quemazón constante en la parte de atrás del talón dentro del yeso o la bota, avísanos. No queremos que se te haga una herida por presión. Trata de que el talón quede 'flotando' poniendo una almohada debajo de la pantorrilla, no directamente bajo el talón.",
+    "nivel_de_urgencia": "MEDIO",
+    "tags": ["cuidados", "prevencion"]
+  },
+  {
+    "id_qa": "PROYECCION_CALZADO",
+    "diagnostico": "Transición a Calzado Normal",
+    "intencion_clave": "zapatos, zapatillas, calzado, cuando me pongo zapatos",
+    "palabras_clave": ["zapatos", "zapatillas", "calzado", "cuando me pongo zapatos"],
+    "respuesta_validada": "Esa es la meta final, ¿cierto? Pero falta un poquito. Primero pasaremos del yeso/bota a zapatillas deportivas anchas o sandalias ajustables porque el pie seguirá hinchado un tiempo. No intentes meter el pie a la fuerza en tus zapatos de siempre todavía, vamos paso a paso.",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["proyeccion", "rehabilitacion"]
+  }
+]
