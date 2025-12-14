@@ -232,5 +232,14 @@
     "respuesta_validada": "Esa es la meta final, ¿cierto? Pero falta un poquito. Primero pasaremos del yeso/bota a zapatillas deportivas anchas o sandalias ajustables porque el pie seguirá hinchado un tiempo. No intentes meter el pie a la fuerza en tus zapatos de siempre todavía, vamos paso a paso.",
     "nivel_de_urgencia": "BAJO",
     "tags": ["proyeccion", "rehabilitacion"]
+  },
+  {
+    "id_qa": "NUTRICION_GENERAL",
+    "diagnostico": "Alimentación y Dieta",
+    "intencion_clave": "puedo comer arroz, dieta, alimentación, alcohol, cerveza, vino, fumar marihuana, chocolate",
+    "palabras_clave": ["comer", "arroz", "carne", "alcohol", "tomar", "beber", "dieta", "comida"],
+    "respuesta_validada": "Puedes comer de todo, ¡una dieta balanceada ayuda a sanar! 🍎 El arroz, carnes y legumbres están perfectos. \n\n⚠️ **OJO CON EL ALCOHOL:** Si estás tomando analgésicos fuertes (Tramadol, Celecoxib) o antibióticos, **NO tomes alcohol**, porque mezclarlo daña el hígado y marea mucho. Si ya no tomas remedios, una copa pequeña no hace daño.",
+    "nivel_de_urgencia": "BAJO",
+    "tags": ["cuidados", "dieta"]
   }
 ]
