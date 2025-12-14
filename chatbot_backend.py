@@ -1,5 +1,9 @@
 # =======================================================================
-# CHATBOT_BACKEND.PY - V6.0 "TOLERANCIA A ERRORES Y TIPOS"
+# CHATBOT_BACKEND.PY - V7.0 "CHILEAN EDITION & CONTEXT AWARE"
+# =======================================================================
+# Autor: Arquitectura de Software - Nivel Senior
+# Descripción: Backend robusto con normalización de modismos locales (CL)
+#              y manejo de interacciones cortas (Afirmaciones/Negaciones).
 # =======================================================================
 
 import json
@@ -12,17 +16,57 @@ import datetime
 import streamlit as st
 import gspread
 import random
+import re
 
 # -----------------------------------------------------------------------
-# 1. PERSONALIDAD Y DATOS
+# 1. BASE DE CONOCIMIENTO & CULTURA (CONFIGURACIÓN)
 # -----------------------------------------------------------------------
+
+# Diccionario de traducción de "Chileno" a "Español Clínico"
+CHILENISMOS_MAP = {
+    r"\bcaleta\b": "mucho",
+    r"\bmas o menos\b": "regular",
+    r"\bmaoma\b": "regular",
+    r"\breguleque\b": "regular",
+    r"\bpal gato\b": "mal",
+    r"\bhecho bolsa\b": "muy mal",
+    r"\bbrigido\b": "intenso",
+    r"\bcuatico\b": "grave",
+    r"\bpata\b": "pierna",
+    r"\bguata\b": "estomago",
+    r"\balharaco\b": "exagerado",
+    r"\bcolor\b": "exageracion", # Ej: "le pones color"
+    r"\bcachai\b": "entiendes",
+    r"\bpesca\b": "atencion", # Ej: "no me tomas pesca"
+    r"\bpescar\b": "atender",
+    r"\bseco\b": "experto",
+    r"\bpololo\b": "pareja",
+    r"\bpolola\b": "pareja",
+    r"\bmarido\b": "esposo",
+    r"\bseñora\b": "esposa",
+    r"\bpucho\b": "cigarro",
+    r"\bcaña\b": "resaca",
+    r"\bquedo la escoba\b": "problema grave",
+    r"\btincada\b": "corazonada",
+    r"\bchao\b": "adios",
+    r"\bharto\b": "mucho",
+    r"\bsipo\b": "si",
+    r"\byapo\b": "ya",
+    r"\bal tiro\b": "inmediatamente",
+    r"\bjoya\b": "excelente",
+    r"\bbacan\b": "excelente",
+    r"\bfilete\b": "excelente",
+    r"\bfome\b": "aburrido",
+    r"\bcharcha\b": "malo"
+}
 
 PALABRAS_ALARMA = [
     "fiebre", "pus", "secreción", "infección", "sangrado abundante", 
     "hemorragia", "dolor insoportable", "desmayo", "no puedo respirar",
     "dedos azules", "no siento la pierna", "calor extremo",
     "se abrió", "abierta", "herida abierta", "veo la placa", "veo el hueso",
-    "hueso expuesto", "tornillo", "supurando", "mal olor", "negro", "necrosis"
+    "hueso expuesto", "tornillo", "supurando", "mal olor", "negro", "necrosis",
+    "se me abrieron", "sangre viva"
 ]
 
 MENSAJE_ALERTA = """
@@ -32,102 +76,114 @@ Si la herida se abrió, ves material (placas/hueso) o hay infección, **NO toque
 **Dirígete a Urgencias ahora mismo.**
 """
 
+# Respuestas para interacciones cortas (Si/No/Saludos)
 CHARLA_SOCIAL = {
-    # Saludos
-    "hola": "¡Hola! ¿Cómo amaneció esa pierna hoy?",
-    "buenos dias": "¡Buen día! ¿Cómo pasaste la noche?",
-    "buenas tardes": "¡Buenas tardes! ¿En qué te puedo ayudar?",
-    "chao": "¡Descansa! Intenta mantener la pierna en alto.",
-    "adios": "¡Que tengas buen descanso! Cuídate.",
+    # Afirmaciones (El parche para tu error de "Si")
+    "si": "Entiendo. Si el síntoma persiste, revisa las indicaciones que te di. ¿Hay algo más específico que quieras saber?",
+    "sipo": "Vale. Si eso te preocupa, cuéntame más detalles para buscar en mis archivos médicos.",
+    "obvio": "Claro. ¿En qué más te puedo ayudar?",
+    "ya": "Perfecto. ¿Alguna otra duda?",
+    "bueno": "Quedamos en eso. ¿Otra consulta?",
     
-    # Estado del Dr.
-    "como esta el doctor": "¡El Dr. está a mil por hora operando! Pero me dejó encargado de cuidarlos. ¿Tú cómo sigues?",
-    "donde esta el doctor": "Probablemente en pabellón, pero yo tengo acceso a sus protocolos.",
-
-    # Agradecimientos
-    "gracias": "¡De nada! Estamos remando juntos en esto. 💪",
-    "muchas gracias": "Un placer. Cualquier cosa chica que te preocupe, escríbeme.",
+    # Negaciones
+    "no": "Entendido. Si no tienes más dudas por ahora, recuerda mantener reposo.",
+    "nopo": "Ok. Avísame si cambia algo.",
+    "nada": "Me alegro entonces. ¡A seguir cuidándose!",
+    
+    # Saludos y Modismos
+    "hola": "¡Hola! ¿Cómo amaneció esa pierna hoy?",
+    "wena": "¡Wena! ¿Cómo va la recuperación?",
+    "quiubo": "¡Hola! ¿En qué te ayudo?",
+    "buenos dias": "¡Buen día! ¿Cómo pasaste la noche?",
+    "buenas tardes": "¡Buenas tardes! Aquí atento a tus dudas.",
+    "chao": "¡Cuídate! Pata arriba y a descansar.",
     
     # Identidad
-    "eres un robot": "Soy una IA entrenada por el equipo médico, pero créeme que me preocupo por tu recuperación.",
-    "eres humano": "Soy tu asistente virtual, pero detrás de mis respuestas está la experiencia de todo el equipo médico.",
+    "eres un robot": "Soy una IA asistente del equipo médico. No tomo café, pero me sé todos los protocolos.",
+    "quien eres": "Soy el asistente virtual de Traumatología. Estoy aquí para resolver dudas rápidas.",
     
-    # Errores
-    "te equivocaste": "¡Ups! Tienes razón, a veces aprendo lento. Gracias por la paciencia.",
-    
-    # PREGUNTAS DE APERTURA
-    "tengo una duda": "Para eso estoy. Cuéntame, ¿qué te preocupa?",
-    "quiero hacer una consulta": "Adelante, soy todo oídos. ¿Qué pasó?",
-    "puedo hacer una pregunta": "¡Claro que sí! Pregunta con confianza.",
-    "necesito ayuda": "Aquí estoy. ¿Es algo urgente o una duda sobre el tratamiento?"
+    # Gratitud
+    "gracias": "¡De nada! A ponerle empeño a esa recuperación. 💪",
+    "vale": "¡De nada!",
+    "te pasaste": "¡Gracias a ti por la paciencia! Estamos para ayudar."
 }
 
 RESPUESTAS_EMOCIONALES = {
-    "mal": "Uhh, siento escuchar eso. La recuperación es una montaña rusa. ¿Es mucho dolor físico?",
-    "pésimo": "Lo siento mucho. Hay días muy duros. ¿Necesitas revisar tu medicación?",
-    "regular": "Te entiendo, esos días 'ni fu ni fa' cansan mucho. ¿Te duele algo puntual?",
-    "mas o menos": "Ánimo. Es normal no estar al 100% todavía. ¿Cómo va el dolor del 1 al 10?",
-    "asustado": "El miedo es normal post-cirugía. No estás solo/a. ¿Qué síntoma te preocupa?",
-    "tengo miedo": "Tranquilo/a. Cuéntame qué sientes exactamente y lo revisamos juntos.",
-    "triste": "Ánimo... Sé que es difícil estar quieto/a, pero cada día falta menos. 💪",
-    "bien": "¡Qué alegría! Esas noticias nos dan energía a todo el equipo.",
-    "mejor": "¡Excelente! Significa que vamos por buen camino. Sigue cuidándote."
+    "mal": "Pucha, qué lata escuchar eso. La recuperación tiene días bien pesados. ¿Es mucho dolor físico?",
+    "pesimo": "Lo siento mucho. A veces dan ganas de tirar la toalla, pero falta poco. ¿Necesitas revisar tus remedios?",
+    "regular": "Ya veo, esos días 'ni fu ni fa'. Paciencia, es parte del proceso. ¿Te duele algo puntual?",
+    "mas o menos": "Ánimo. Es normal no estar al 100% todavía. ¿Del 1 al 10, cuánto te duele?",
+    "asustado": "Es súper normal tener susto, sobre todo si es tu primera cirugía. Pero aquí estamos. ¿Qué sientes raro?",
+    "tengo miedo": "Tranquilo. Cuéntame qué sientes exactamente y lo revisamos juntos para que te quedes tranquilo.",
+    "triste": "Arriba ese ánimo. Sé que aburre estar quieto, pero piensa que el hueso se está pegando ahora mismo. 💪",
+    "bien": "¡Buena! Esas noticias nos alegran el día. Sigue así.",
+    "mejor": "¡Excelente! Significa que vamos impeque. A no descuidarse eso sí."
 }
 
 FRASES_EMPATIA = [
-    "Te entiendo perfecto. Mira, sobre eso el protocolo es: ",
-    "Buena pregunta. Para tu tranquilidad, te cuento: ",
-    "Es súper común esa duda. Lo que indicamos siempre es: ",
-    "Claro, déjame aclararte ese punto importante: ",
-    "Entiendo que eso te preocupe. La indicación médica es: ",
+    "Te cacho perfecto. Mira, el protocolo dice: ",
+    "Buena pregunta. Para que te quedes tranquilo: ",
+    "Es típica esa duda. Lo que indicamos siempre es: ",
+    "Claro, déjame explicarte eso: ",
+    "Entiendo que te urgalla eso. La indicación médica es: ",
     "Justo el Dr. siempre recalca esto: ",
     "Mira, para que no corras riesgos innecesarios: ",
-    "Aquí la regla de oro es la siguiente: ",
+    "Aquí la regla de oro es: ",
     "" 
 ]
 
 # -----------------------------------------------------------------------
-# 2. FUNCIONES DE PROCESAMIENTO
+# 2. MOTOR DE PROCESAMIENTO (NLP AVANZADO)
 # -----------------------------------------------------------------------
+
+def normalizar_chilenismos(texto):
+    """Reemplaza jerga chilena por español neutro para mejorar la búsqueda"""
+    texto = texto.lower()
+    for slang, standard in CHILENISMOS_MAP.items():
+        # Usamos regex para reemplazar solo palabras completas
+        texto = re.sub(slang, standard, texto)
+    return texto
 
 def preprocesar_texto(texto):
     if not isinstance(texto, str):
         return ""
-    texto = texto.lower()
-    # Mantenemos solo letras y números, eliminamos puntuación
+    
+    # 1. Normalización cultural (Chilenismos)
+    texto = normalizar_chilenismos(texto)
+    
+    # 2. Limpieza estándar
     texto = ''.join([char for char in texto if char not in string.punctuation])
+    
     return texto
 
 def combinar_columnas(row):
+    """Crea el 'Documento' de búsqueda unificando intención + palabras clave + tags"""
     parte1 = str(row['intencion_clave'])
     parte2 = " ".join(row['palabras_clave'])
     tags = row.get('tags', [])
-    if isinstance(tags, list):
-        parte3 = " ".join(tags)
-    else:
-        parte3 = ""
+    parte3 = " ".join(tags) if isinstance(tags, list) else ""
     return parte1 + " " + parte2 + " " + parte3
 
 def cargar_y_preparar_base(archivo_json):
     with open(archivo_json, 'r', encoding='utf-8') as f:
         data = json.load(f)
     df = pd.DataFrame(data)
+    
+    # Creamos el campo de búsqueda enriquecido
     df['texto_busqueda'] = df.apply(combinar_columnas, axis=1)
-    # Preprocesamos, pero OJO: el vectorizador hará el trabajo pesado de los typos
+    
+    # Preprocesamos la base de datos también (para que 'pucho' coincida con 'cigarro' si está mapeado)
     df['intencion_preprocesada'] = df['texto_busqueda'].apply(preprocesar_texto)
     return df
 
 def inicializar_vectorizador(df):
-    # --- LA MAGIA CONTRA LOS TYPOS ---
-    # analyzer='char_wb': Analiza grupos de letras, no palabras enteras.
-    # ngram_range=(3, 5): Busca coincidencias de 3, 4 y 5 letras.
-    # Esto permite que "funmar" coincida con "fumar" porque comparten "fumar", "uma", "mar".
+    # Usamos char_wb con rango 3-5 para tolerancia a typos (ej: "dolr" -> "dolor")
     vectorizer = TfidfVectorizer(analyzer='char_wb', ngram_range=(3, 5))
     matriz_tfidf = vectorizer.fit_transform(df['intencion_preprocesada'])
     return vectorizer, matriz_tfidf
 
 # -----------------------------------------------------------------------
-# 3. GOOGLE SHEETS
+# 3. INTERFAZ DE DATOS (GOOGLE SHEETS)
 # -----------------------------------------------------------------------
 
 def registrar_pregunta_en_sheets(consulta):
@@ -160,38 +216,43 @@ def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
         return False
 
 # -----------------------------------------------------------------------
-# 4. LÓGICA DE RESPUESTA
+# 4. LÓGICA CENTRAL DEL CHATBOT
 # -----------------------------------------------------------------------
 
-def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.15): 
-    # Bajamos umbral a 0.15 porque la búsqueda por caracteres da scores más bajos pero más precisos
+def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.18):
     
-    consulta_clean = consulta.lower().strip()
-    # Quitamos puntuación para la lógica social también
-    consulta_limpia_social = ''.join([c for c in consulta_clean if c not in string.punctuation])
-    palabras_usuario = consulta_limpia_social.split()
+    # 1. Preprocesamiento Cultural
+    # Si el usuario dice "me duele la pata", internamente buscamos "me duele la pierna"
+    consulta_normalizada = normalizar_chilenismos(consulta)
+    consulta_clean = consulta_normalizada.lower().strip()
+    
+    # Quitamos puntuación para comparaciones exactas de listas
+    consulta_sin_puntuacion = ''.join([c for c in consulta_clean if c not in string.punctuation])
+    palabras_usuario = consulta_sin_puntuacion.split()
 
-    # 1. FILTRO SOCIAL (Tolerante)
-    # Subimos el límite a 12 palabras para aguantar frases como "mmm otra vez eres un robot"
-    if len(palabras_usuario) < 12: 
+    # 2. FILTRO SOCIAL Y AFIRMACIONES (Prioridad Alta, Tolerante)
+    # Aceptamos frases de hasta 10 palabras. Si dice "sipo", entra aquí.
+    if len(palabras_usuario) < 10: 
+        # Búsqueda exacta de frase en diccionario
         for frase, respuesta in CHARLA_SOCIAL.items():
-            if frase in consulta_limpia_social:
+            if frase == consulta_sin_puntuacion: # Coincidencia exacta (ej: "si")
+                return respuesta
+            if frase in consulta_sin_puntuacion and len(frase) > 3: # Coincidencia parcial para frases largas
                 return respuesta
 
-    # 2. FILTRO EMOCIONAL (Exacto)
-    # Buscamos la palabra EXACTA en la lista de palabras del usuario
-    # Así "animal" no activa "mal".
+    # 3. FILTRO EMOCIONAL (Búsqueda de palabras clave)
     for emocion, respuesta in RESPUESTAS_EMOCIONALES.items():
-        if emocion in palabras_usuario: # <--- CAMBIO CLAVE: Búsqueda exacta en lista
+        if emocion in palabras_usuario:
             return respuesta
 
-    # 3. BÚSQUEDA MÉDICA (Fuzzy / Typos)
-    consulta_preprocesada = preprocesar_texto(consulta)
+    # 4. BÚSQUEDA MÉDICA (Vectorial TF-IDF)
+    # Usamos la consulta normalizada (sin chilenismos)
+    consulta_final = preprocesar_texto(consulta)
     
-    if not consulta_preprocesada:
-        return "Disculpa, no te capté bien. ¿Me lo podrías explicar con otras palabras? 🤔"
+    if not consulta_final:
+        return "Disculpa, no te capté. ¿Me lo podrías explicar de nuevo? 🤔"
 
-    consulta_vector = vectorizer.transform([consulta_preprocesada])
+    consulta_vector = vectorizer.transform([consulta_final])
     similitudes = cosine_similarity(consulta_vector, matriz_tfidf)
     mejor_sim_score = similitudes.max()
     mejor_sim_index = similitudes.argmax()
@@ -203,8 +264,8 @@ def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.15):
     else:
         registrar_pregunta_en_sheets(consulta)
         return (
-            "Sabes, tu pregunta es súper específica y prefiero no 'carrilearme' (improvisar). "
-            "Como es un tema médico delicado, mejor dejé anotada tu duda para que el Dr. la revise. "
+            "Sabes, esa pregunta es súper específica y prefiero no 'carrilearme' (improvisar). "
+            "Como es un tema médico, dejé anotada tu duda para preguntarle al Dr. "
             "Mientras tanto, ¿hay algo más estándar en lo que te pueda orientar?"
         )
 
