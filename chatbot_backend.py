@@ -1,5 +1,5 @@
 # =======================================================================
-# CHATBOT_BACKEND.PY - V8.0 "ULTIMATE CHILEAN CONTEXT AWARE"
+# CHATBOT_BACKEND.PY - V8.1 HOTFIX (CORRECCIÓN DE EMERGENCIA)
 # =======================================================================
 
 import json
@@ -15,30 +15,19 @@ import random
 import re
 
 # -----------------------------------------------------------------------
-# 1. BASE CULTURAL Y EMOCIONAL
+# 1. CONFIGURACIÓN Y DICCIONARIOS
 # -----------------------------------------------------------------------
 
-# INTENSIDAD: Palabras que suben el nivel de urgencia emocional
-INTENSIFICADORES_CHILENOS = [
-    "caleta", "harto", "brigido", "cuatico", "la cago", "horrible", 
-    "insoportable", "muchisimo", "desesperado", "furioso", "ctm", 
-    "pal pico", "pal gato", "chacal", "tremendo", "urgente"
-]
-
-# TRADUCTOR: Jerga -> Español Neutro
+# Diccionario de Modismos (Traductor)
 CHILENISMOS_MAP = {
     r"\bcaleta\b": "mucho", r"\bmas o menos\b": "regular", r"\bmaoma\b": "regular",
-    r"\breguleque\b": "regular", r"\bpal gato\b": "mal", r"\bhecho bolsa\b": "muy mal",
-    r"\bbrigido\b": "intenso", r"\bcuatico\b": "grave", r"\bpata\b": "pierna",
-    r"\bguata\b": "estomago", r"\balharaco\b": "exagerado", r"\bcolor\b": "exageracion",
-    r"\bcachai\b": "entiendes", r"\bpesca\b": "atencion", r"\bpescar\b": "atender",
-    r"\bseco\b": "experto", r"\bpololo\b": "pareja", r"\bpolola\b": "pareja",
-    r"\bmarido\b": "esposo", r"\bseñora\b": "esposa", r"\bpucho\b": "cigarro",
-    r"\bcaña\b": "resaca", r"\bquedo la escoba\b": "problema grave", r"\btincada\b": "corazonada",
-    r"\bchao\b": "adios", r"\bharto\b": "mucho", r"\bsipo\b": "si",
-    r"\byapo\b": "ya", r"\bal tiro\b": "inmediatamente", r"\bjoya\b": "excelente",
-    r"\bbacan\b": "excelente", r"\bfilete\b": "excelente", r"\bfome\b": "aburrido",
-    r"\bcharcha\b": "malo"
+    r"\bpal gato\b": "mal", r"\bbrigido\b": "intenso", r"\bcuatico\b": "grave", 
+    r"\bpata\b": "pierna", r"\bguata\b": "estomago", r"\balharaco\b": "exagerado", 
+    r"\bcachai\b": "entiendes", r"\bpesca\b": "atencion", r"\bseco\b": "experto", 
+    r"\bpololo\b": "pareja", r"\bpucho\b": "cigarro", r"\bchao\b": "adios", 
+    r"\bharto\b": "mucho", r"\bsipo\b": "si", r"\byapo\b": "ya", 
+    r"\bal tiro\b": "inmediatamente", r"\bjoya\b": "excelente", r"\bbacan\b": "excelente", 
+    r"\bfome\b": "aburrido", r"\bcharcha\b": "malo"
 }
 
 PALABRAS_ALARMA = [
@@ -56,27 +45,33 @@ Si la herida se abrió, ves material (placas/hueso) o hay infección, **NO toque
 **Dirígete a Urgencias ahora mismo.**
 """
 
-CHARLA_SOCIAL = {
+# Diccionario Mixto: Social + Emocional (Unificado para que no fallen)
+DICCIONARIO_RAPIDO = {
     "si": "Entiendo. Si el síntoma persiste, revisa las indicaciones anteriores.",
     "sipo": "Vale. Si eso te preocupa, cuéntame más detalles.",
     "obvio": "Claro. ¿En qué más te puedo ayudar?",
     "ya": "Perfecto. ¿Alguna otra duda?",
-    "bueno": "Quedamos en eso. ¿Otra consulta?",
     "no": "Entendido. Recuerda mantener reposo.",
     "nopo": "Ok. Avísame si cambia algo.",
     "nada": "Me alegro entonces. ¡A seguir cuidándose!",
     "hola": "¡Hola! ¿Cómo amaneció esa pierna hoy?",
     "wena": "¡Wena! ¿Cómo va la recuperación?",
-    "quiubo": "¡Hola! ¿En qué te ayudo?",
     "buenos dias": "¡Buen día! ¿Cómo pasaste la noche?",
     "chao": "¡Cuídate! Pata arriba y a descansar.",
     "gracias": "¡De nada! A ponerle empeño a esa recuperación. 💪",
     "vale": "¡De nada!",
-    "eres un robot": "Soy una IA asistente del equipo médico, lista para ayudarte."
+    "eres un robot": "Soy una IA asistente del equipo médico, lista para ayudarte.",
+    "ayuda": "Estoy aquí. Cuéntame qué te pasa o qué duda tienes.",
+    
+    # Emociones
+    "mal": "Pucha, qué lata. La recuperación tiene días pesados. ¿Es mucho dolor físico?",
+    "pesimo": "Lo siento mucho. A veces dan ganas de tirar la toalla, pero falta poco. ¿Revisamos tus remedios?",
+    "regular": "Ya veo, esos días 'ni fu ni fa'. Paciencia, es parte del proceso.",
+    "bien": "¡Buena! Esas noticias nos alegran el día. Sigue así.",
+    "mejor": "¡Excelente! Significa que vamos impeque. A no descuidarse eso sí."
 }
 
-# --- VARIABILIDAD: FRASES PARA COMBINAR ---
-FRASES_EMPATIA_NORMAL = [
+FRASES_EMPATIA = [
     "Te explico lo que indica el protocolo: ",
     "Buena pregunta. Mira: ",
     "Es una duda común. Lo que hacemos es: ",
@@ -84,27 +79,11 @@ FRASES_EMPATIA_NORMAL = [
     "Para tu tranquilidad, te cuento: "
 ]
 
-FRASES_EMPATIA_INTENSA = [
-    "Uff, entiendo que es difícil. Pero mira, lo importante es: ",
-    "Tranquilo/a, respira. Vamos a resolver esto: ",
-    "Veo que te preocupa harto. Déjame explicarte bien: ",
-    "Oye, calma. Es normal sentirse así, pero ojo con esto: ",
-    "No te angusties. Aquí está la indicación precisa: "
-]
-
-CIERRES_HUMANOS = [
-    " ¿Te queda más claro así?",
-    " ¡Vamos que se puede!",
-    " ¿Te parece?",
-    " Cualquier otra cosa, me dices.",
-    " ¡Ánimo con eso!"
-]
-
 # -----------------------------------------------------------------------
-# 2. MOTOR NLP (INTELIGENTE)
+# 2. MOTOR NLP (SIMPLIFICADO Y SEGURO)
 # -----------------------------------------------------------------------
 
-def normalizar_texto_avanzado(texto):
+def normalizar_texto(texto):
     if not isinstance(texto, str): return ""
     texto = texto.lower()
     
@@ -112,42 +91,33 @@ def normalizar_texto_avanzado(texto):
     for slang, standard in CHILENISMOS_MAP.items():
         texto = re.sub(slang, standard, texto)
     
-    # 2. Diminutivos (Stemming casero)
-    # Convierte "piecito" -> "pie", "dolorcito" -> "dolor"
+    # 2. Diminutivos
     texto = re.sub(r'(\w+)ito\b', r'\1', texto) 
-    texto = re.sub(r'(\w+)ita\b', r'\1', texto)
-    texto = re.sub(r'(\w+)illos\b', r'\1', texto)
     
-    # 3. Limpieza final
+    # 3. Limpieza de puntuación
     texto = ''.join([char for char in texto if char not in string.punctuation])
     return texto
 
-def detectar_intensidad(texto):
-    """Devuelve True si el usuario está muy emocional/intenso"""
-    texto = texto.lower()
-    for palabra in INTENSIFICADORES_CHILENOS:
-        if palabra in texto:
-            return True
-    return False
-
 def combinar_columnas(row):
-    return f"{row['intencion_clave']} {' '.join(row['palabras_clave'])} {' '.join(row.get('tags', []))}"
+    tags = " ".join(row.get('tags', [])) if isinstance(row.get('tags'), list) else ""
+    return f"{row['intencion_clave']} {' '.join(row['palabras_clave'])} {tags}"
 
 def cargar_y_preparar_base(archivo_json):
     with open(archivo_json, 'r', encoding='utf-8') as f:
         data = json.load(f)
     df = pd.DataFrame(data)
     df['texto_busqueda'] = df.apply(combinar_columnas, axis=1)
-    df['intencion_preprocesada'] = df['texto_busqueda'].apply(normalizar_texto_avanzado)
+    df['intencion_preprocesada'] = df['texto_busqueda'].apply(normalizar_texto)
     return df
 
 def inicializar_vectorizador(df):
+    # Usamos char_wb con rango 3-5 para tolerancia a typos
     vectorizer = TfidfVectorizer(analyzer='char_wb', ngram_range=(3, 5))
     matriz_tfidf = vectorizer.fit_transform(df['intencion_preprocesada'])
     return vectorizer, matriz_tfidf
 
 # -----------------------------------------------------------------------
-# 3. CONEXIONES Y MEMORIA (SHEETS)
+# 3. SHEETS & UTILS
 # -----------------------------------------------------------------------
 
 def conectar_sheets():
@@ -160,9 +130,8 @@ def conectar_sheets():
 def registrar_pregunta_en_sheets(consulta):
     try:
         sh = conectar_sheets()
-        if sh:
-            sh.sheet1.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta])
-    except Exception as e: print(f"Error Log: {e}")
+        if sh: sh.sheet1.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta])
+    except: pass
 
 def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
     try:
@@ -175,55 +144,48 @@ def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
     except: return False
 
 def registrar_feedback(consulta, respuesta, calificacion):
-    """NUEVO: Guarda qué respuesta fue útil y cuál no"""
     try:
         sh = conectar_sheets()
         if sh:
-            try: ws = sh.worksheet("Feedback") # Crea esta hoja en tu Excel
+            try: ws = sh.worksheet("Feedback")
             except: ws = sh.add_worksheet(title="Feedback", rows=1000, cols=4)
             ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta, respuesta[:50], calificacion])
-    except Exception as e: print(f"Error Feedback: {e}")
+    except: pass
 
 # -----------------------------------------------------------------------
-# 4. CEREBRO CENTRAL
+# 4. LÓGICA CENTRAL (ARREGLADA)
 # -----------------------------------------------------------------------
 
-def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.18):
+def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.15): # Umbral bajado a 0.15 para captar mejor "fumar"
     
-    # 1. Análisis de Contexto
-    texto_normalizado = normalizar_texto_avanzado(consulta)
-    es_intenso = detectar_intensidad(consulta)
-    
-    # 2. Filtro Social Rápido
-    palabras = texto_normalizado.split()
-    if len(palabras) < 10:
-        for frase, resp in CHARLA_SOCIAL.items():
-            if frase in texto_normalizado:
-                return resp, [] # Retorna respuesta y tags vacíos
+    # 1. Normalización
+    texto_norm = normalizar_texto(consulta)
+    palabras = texto_norm.split()
 
-    # 3. Búsqueda Vectorial
-    consulta_vec = vectorizer.transform([texto_normalizado])
+    # 2. FILTRO RÁPIDO (SOCIAL / EMOCIONAL) - ¡AQUÍ ESTABA EL ERROR!
+    # Ahora revisamos si ALGUNA palabra de la frase está en nuestro diccionario rápido
+    # Esto asegura que "hola ayuda" o "estoy mal" funcionen.
+    for palabra in palabras:
+        if palabra in DICCIONARIO_RAPIDO:
+            return DICCIONARIO_RAPIDO[palabra], []
+
+    # 3. BÚSQUEDA MÉDICA (VECTORIAL)
+    consulta_vec = vectorizer.transform([texto_norm])
     similitudes = cosine_similarity(consulta_vec, matriz_tfidf)
     mejor_score = similitudes.max()
     idx = similitudes.argmax()
     
     if mejor_score > umbral:
         respuesta_base = df.iloc[idx]['respuesta_validada']
-        tags_detectados = df.iloc[idx].get('tags', [])
-        
-        # Variabilidad: Elegimos prefijo según intensidad
-        if es_intenso:
-            prefijo = random.choice(FRASES_EMPATIA_INTENSA)
-        else:
-            prefijo = random.choice(FRASES_EMPATIA_NORMAL)
-            
-        sufijo = random.choice(CIERRES_HUMANOS)
-        
-        respuesta_final = prefijo + respuesta_base + sufijo
-        return respuesta_final, tags_detectados
+        tags = df.iloc[idx].get('tags', [])
+        preambulo = random.choice(FRASES_EMPATIA)
+        return preambulo + respuesta_base, tags
     else:
         registrar_pregunta_en_sheets(consulta)
-        return "Sabes, esa pregunta es súper específica y prefiero no 'carrilearme'. Dejé anotada tu duda para el Dr. ¿Te ayudo con otra cosa?", []
+        return (
+            "Sabes, esa pregunta es súper específica y prefiero no 'carrilearme'. "
+            "Dejé anotada tu duda para el Dr. ¿Hay algo más estándar en lo que te pueda orientar?", []
+        )
 
 def revisar_guardrail_emergencia(consulta):
     for p in PALABRAS_ALARMA:
@@ -231,8 +193,8 @@ def revisar_guardrail_emergencia(consulta):
     return False
 
 def responder_consulta(consulta, df, vectorizer, matriz_tfidf, contexto_previo=""):
-    # Fusión de Contexto: Si hay contexto previo y la consulta es corta, los unimos
-    if len(consulta.split()) < 3 and contexto_previo:
+    # Fusión de Contexto simple
+    if len(consulta.split()) < 4 and contexto_previo:
         consulta_aumentada = f"{consulta} {contexto_previo}"
     else:
         consulta_aumentada = consulta
