@@ -12,7 +12,7 @@
     "id_qa": "ALERTA_GUARDRAIL_001",
     "diagnostico": "General - Señales de Alarma Crítica",
     "intencion_clave": "fiebre, pus, dolor insoportable, sangrado abundante, me duele muchisimo, emergencia",
-    "palabras_clave": ["emergencia", "fiebre", "pus", "infección", "dolor terrible", "sangrado activo", "falta aire", "se abrió", "hueso"],
+    "palabras_clave": ["emergencia", "fiebre", "pus", "infección", "dolor terrible", "sangrado activo", "falta aire", "se abrió", "hueso", "herida abierta"],
     "respuesta_validada": "🚨 **¡ALERTA DE SEGURIDAD!** Lo que nos cuentas (como fiebre alta, pus, dolor que no cede, dificultad para respirar, hueso expuesto o sangrado activo) nos preocupa y **NO** es algo para resolver por chat. Por tu seguridad, deja el celular ahora mismo y dirígete al **servicio de urgencia más cercano** de inmediato. No pierdas tiempo intentando contactarnos, esto requiere atención presencial urgente.",
     "nivel_de_urgencia": "ALTO",
     "tags": ["emergencia", "urgencia", "red flag"]
@@ -21,7 +21,7 @@
     "id_qa": "MANEJO_DOLOR_EPICRISIS",
     "diagnostico": "Manejo del Dolor y Medicación",
     "intencion_clave": "manejo del dolor, me duele, que puedo tomar, pastillas, epicrisis",
-    "palabras_clave": ["dolor", "analgésico", "receta", "dosis", "horario", "paracetamol", "tramadol", "celecoxib", "ketorolaco"],
+    "palabras_clave": ["dolor", "analgésico", "receta", "dosis", "horario", "paracetamol", "tramadol", "celecoxib", "ketorolaco", "pastillas"],
     "respuesta_validada": "Con el dolor no hay que hacerse el valiente. Sigue estrictamente la pauta indicada en tu 'Epicrisis' (el papel de alta). Ahí están las dosis exactas pensadas para tu caso. Toma los remedios con reloj en mano; no esperes a que el dolor sea fuerte. Si a pesar de esto el dolor es insoportable, acude al servicio de urgencia más cercano.",
     "nivel_de_urgencia": "MEDIO",
     "tags": ["dolor", "medicacion"]
@@ -48,7 +48,7 @@
     "id_qa": "LOGISTICA_RADIOGRAFIAS",
     "diagnostico": "Flujo de Atención con Radiografías",
     "intencion_clave": "donde me tomo la radiografia, tengo control con rayos, llego antes",
-    "palabras_clave": ["rayos", "rx", "radiografía", "control", "admisión", "llegada", "imagen"],
+    "palabras_clave": ["rayos", "rx", "radiografía", "control", "admisión", "llegada", "imagen", "examenes"],
     "respuesta_validada": "Para tu control con radiografías, hagámoslo eficiente: cuando llegues, avisa en admisión y pasa directo a tomarte la radiografía **ANTES** de entrar a la consulta. Así, cuando entres a vernos, ya tendremos las imágenes en pantalla y no tendrás que esperar doble. ¡Nos ayudas mucho a todos con esto!",
     "nivel_de_urgencia": "BAJO",
     "tags": ["administrativo", "control"]
@@ -57,7 +57,7 @@
     "id_qa": "NO_FUMAR",
     "diagnostico": "Indicaciones en relacion a Tabaquismo y/o Drogas",
     "intencion_clave": "prohibición estricta de tabaco activo y pasivo",
-    "palabras_clave": ["fumar", "cigarrillo", "tabaco", "fuman", "humo", "vapeador", "nicotina", "tia", "mama", "papa", "visita", "esposo", "mi familia", "fuman en casa", "vicio", "marihuana", "pito", "fumador pasivo"],
+    "palabras_clave": ["fumar", "fumo", "fumas", "fume", "cigarrillo", "cigarro", "cigarros", "tabaco", "fuman", "humo", "vapeador", "nicotina", "tia", "mama", "papa", "visita", "esposo", "mi familia", "fuman en casa", "vicio", "marihuana", "pito", "fumador pasivo", "pucho"],
     "respuesta_validada": "La instrucción es una sola: **NO FUMAR, ni de forma activa ni pasiva.** \n\n1. **Activo:** El cigarro cierra los vasos sanguíneos y tu hueso NO pegará (pseudoartrosis). \n2. **Pasivo:** Si tu familia o visitas fuman cerca de ti, inhalas los mismos tóxicos y el daño es el mismo.\n\n**Tu responsabilidad como paciente** es exigir un ambiente libre de humo. No culpes a tus familiares si la herida se complica o el hueso no pega por el humo en casa; tú debes poner el límite tajante.",
     "nivel_de_urgencia": "BAJO",
     "tags": ["cuidados generales", "factores de riesgo", "retardo consolidación", "habitos"]
@@ -75,7 +75,7 @@
     "id_qa": "DESCARGA_EXTREMIDAD",
     "diagnostico": "Carga de Peso (Descarga)",
     "intencion_clave": "puedo pisar, apoyar, muletas, carga, caminar",
-    "palabras_clave": ["pisar", "apoyar", "carga", "tocar suelo", "caminar", "peso", "muleta"],
+    "palabras_clave": ["pisar", "apoyar", "carga", "tocar suelo", "caminar", "peso", "muleta", "andador"],
     "respuesta_validada": "En general, y salvo que tu epicrisis diga otra cosa, mantenemos la indicación de 'descarga'. Esto significa **NO apoyar** el pie operado en el suelo bajo ninguna circunstancia. Usa tus muletas o andador. Apoyar antes de tiempo puede desplazar la fractura o dañar la cirugía irreparablemente.",
     "nivel_de_urgencia": "ALTO",
     "tags": ["postop", "movilidad", "seguridad"]
@@ -102,7 +102,7 @@
     "id_qa": "SIGNOS_TROMBOSIS",
     "diagnostico": "Alerta de Trombosis",
     "intencion_clave": "dolor pantorrilla, calambre fuerte, trombosis, coágulo, dolor gemelo",
-    "palabras_clave": ["dolor pantorrilla", "calambre fuerte", "trombosis", "coágulo", "dolor gemelo", "falta de aire", "pecho"],
+    "palabras_clave": ["dolor pantorrilla", "calambre fuerte", "trombosis", "coágulo", "dolor gemelo", "falta de aire", "pecho", "disnea"],
     "respuesta_validada": "En cirugía de pierna esto es muy importante. Si sientes un dolor profundo en la pantorrilla (el gemelo), como un calambre que no se pasa, o si te falta el aire de la nada, no esperes. Ve al **servicio de urgencia más cercano** para que te hagan una eco. Es mejor pecar de exagerado que ignorar una posible trombosis. Recuerda usar tu tromboprofilaxis (anticoagulante) si te la indicamos.",
     "nivel_de_urgencia": "ALTO",
     "tags": ["emergencia", "trombosis"]
@@ -129,7 +129,7 @@
     "id_qa": "MEDICAMENTOS_CRONICOS",
     "diagnostico": "Manejo de Fármacos Habituales",
     "intencion_clave": "remedios de la presion, pastillas de antes, diabetes, tiroides",
-    "palabras_clave": ["crónicos", "presión", "diabetes", "tiroides", "medicamentos habituales", "hipertensión"],
+    "palabras_clave": ["crónicos", "presión", "diabetes", "tiroides", "medicamentos habituales", "hipertensión", "metformina", "eutirox"],
     "respuesta_validada": "Tus remedios de siempre (para la presión, diabetes, tiroides, etc.) síguelos tomando en tus horarios habituales y dosis de siempre, a menos que en tu documento de alta (epicrisis) hayamos escrito explícitamente algún cambio.",
     "nivel_de_urgencia": "BAJO",
     "tags": ["medicacion", "cronicos"]
@@ -138,7 +138,7 @@
     "id_qa": "CREMAS_POMADAS",
     "diagnostico": "Restricción de Productos Tópicos",
     "intencion_clave": "crema, pomada, matico, aloe vera, cicatrizante",
-    "palabras_clave": ["crema", "pomada", "aceite", "ungüento", "herida", "casero", "matico", "aloe"],
+    "palabras_clave": ["crema", "pomada", "aceite", "ungüento", "herida", "casero", "matico", "aloe", "cicatricure"],
     "respuesta_validada": "Por favor, no te apliques cremas, pomadas, aceites ni 'remedios caseros' en la herida o el pie. Solo usa lo que esté escrito en tu indicación de alta. La piel está delicada y queremos evitar infecciones o reacciones alérgicas.",
     "nivel_de_urgencia": "MEDIO",
     "tags": ["herida", "cuidados"]
@@ -147,7 +147,7 @@
     "id_qa": "LICENCIA_MEDICA",
     "diagnostico": "Reposo Laboral",
     "intencion_clave": "licencia, trabajo, volver a trabajar, reposo, días",
-    "palabras_clave": ["licencia", "trabajo", "volver a trabajar", "reposo", "días", "comppin"],
+    "palabras_clave": ["licencia", "trabajo", "volver a trabajar", "reposo", "días", "comppin", "isapre", "fonasa"],
     "respuesta_validada": "Sabemos que preocupa el tema laboral, pero las cirugías de pie y tobillo requieren paciencia. El reposo laboral es parte del tratamiento. Vamos a ir renovando la licencia paso a paso en cada control, así que tranquilo/a, te cubriremos el tiempo que sea médicamente necesario.",
     "nivel_de_urgencia": "BAJO",
     "tags": ["administrativo", "legal"]
@@ -156,7 +156,7 @@
     "id_qa": "CONDUCCION_VEHICULO",
     "diagnostico": "Restricción de Conducción",
     "intencion_clave": "manejar, conducir, auto, coche, automático, seguro",
-    "palabras_clave": ["manejar", "conducir", "auto", "coche", "automático", "volante", "seguro", "licencia"],
+    "palabras_clave": ["manejar", "conducir", "auto", "coche", "automático", "volante", "seguro", "licencia", "chofer"],
     "respuesta_validada": "La respuesta es NO. Mientras estés con licencia médica (reposo laboral), legal y médicamente NO puedes conducir. Tu tiempo de reacción es más lento por el dolor o medicamentos, y si participas en un accidente (aunque no sea tu culpa), el seguro NO te cubrirá y tendrás problemas legales graves. No te arriesgues hasta tener el alta laboral definitiva.",
     "nivel_de_urgencia": "MEDIO",
     "tags": ["seguridad", "transporte", "legal"]
