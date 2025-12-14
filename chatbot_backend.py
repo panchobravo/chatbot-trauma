@@ -1,5 +1,5 @@
 # =======================================================================
-# CHATBOT_BACKEND.PY - V5.0 "HUMAN TOUCH" (ESTILO CLAUDE-LITE)
+# CHATBOT_BACKEND.PY - V5.1 "BLINDADA" (Sintaxis Simplificada)
 # =======================================================================
 
 import json
@@ -14,10 +14,9 @@ import gspread
 import random
 
 # -----------------------------------------------------------------------
-# 1. PERSONALIDAD Y EMPATÍA (EL CORAZÓN DEL BOT)
+# 1. PERSONALIDAD Y DATOS
 # -----------------------------------------------------------------------
 
-# Palabras que activan la ALARMA INMEDIATA
 PALABRAS_ALARMA = [
     "fiebre", "pus", "secreción", "infección", "sangrado abundante", 
     "hemorragia", "dolor insoportable", "desmayo", "no puedo respirar",
@@ -33,7 +32,6 @@ Si la herida se abrió, ves material (placas/hueso) o hay infección, **NO toque
 **Dirígete a Urgencias ahora mismo.**
 """
 
-# DICCIONARIO SOCIAL: Respuestas rápidas a interacciones humanas
 CHARLA_SOCIAL = {
     "como esta el doctor": "¡El Dr. está a mil por hora operando! Pero me dejó encargado de cuidarlos. ¿Tú cómo sigues?",
     "gracias": "¡De nada! Estamos remando juntos en esto. 💪",
@@ -48,7 +46,6 @@ CHARLA_SOCIAL = {
     "buenas tardes": "¡Buenas tardes! ¿En qué te puedo ayudar en este momento?"
 }
 
-# DICCIONARIO EMOCIONAL: Detecta el estado de ánimo
 RESPUESTAS_EMOCIONALES = {
     "mal": "Uhh, siento escuchar eso. La recuperación es una montaña rusa, hay días malos. ¿Es mucho dolor o es el encierro?",
     "mas o menos": "Te entiendo. Esos días 'ni fu ni fa' son pesados. ¿Te duele algo puntual o es cansancio general?",
@@ -59,7 +56,6 @@ RESPUESTAS_EMOCIONALES = {
     "mejor": "¡Excelente! Significa que el cuerpo está haciendo su trabajo. No bajemos la guardia eso sí."
 }
 
-# SAL DE LA RUTINA: Frases variadas para iniciar la respuesta médica
 FRASES_EMPATIA = [
     "Te entiendo perfecto. Mira, sobre eso el protocolo es: ",
     "Buena pregunta. Para tu tranquilidad, te cuento: ",
@@ -69,18 +65,17 @@ FRASES_EMPATIA = [
     "Justo el Dr. siempre recalca esto: ",
     "Mira, para que no corras riesgos innecesarios: ",
     "Aquí la regla de oro es la siguiente: ",
-    "" # A veces es mejor ser directo y no decir nada antes
+    "" 
 ]
 
 # -----------------------------------------------------------------------
-# 2. PROCESAMIENTO NLP (CORE INTELIGENTE)
+# 2. FUNCIONES DE PROCESAMIENTO
 # -----------------------------------------------------------------------
 
 def preprocesar_texto(texto):
     if not isinstance(texto, str):
         return ""
     texto = texto.lower()
-    # Eliminamos puntuación para que no moleste
     texto = ''.join([char for char in texto if char not in string.punctuation])
     try:
         stop_words_es = stopwords.words('spanish')
@@ -91,23 +86,25 @@ def preprocesar_texto(texto):
     palabras_filtradas = [w for w in palabras if w not in stop_words_es]
     return ' '.join(palabras_filtradas)
 
+def combinar_columnas(row):
+    """Función auxiliar para evitar errores de sintaxis en lambdas complejas"""
+    parte1 = str(row['intencion_clave'])
+    parte2 = " ".join(row['palabras_clave'])
+    # Manejo seguro de tags
+    tags = row.get('tags', [])
+    if isinstance(tags, list):
+        parte3 = " ".join(tags)
+    else:
+        parte3 = ""
+    return parte1 + " " + parte2 + " " + parte3
+
 def cargar_y_preparar_base(archivo_json):
-    """
-    Fusión de Inteligencia: Une 'intencion' + 'palabras_clave' + 'tags'
-    para crear un súper campo de búsqueda y entender mejor el contexto.
-    """
     with open(archivo_json, 'r', encoding='utf-8') as f:
         data = json.load(f)
     df = pd.DataFrame(data)
     
-    # FUSIÓN DE CAMPOS PARA MAXIMIZAR COMPRENSIÓN
-    df['texto_busqueda'] = df.apply(
-        lambda row: (
-            str(row['intencion_clave']) + " " + 
-            " ".join(row['palabras_clave']) + " " + 
-            " ".join(row.get('tags', [])) # Agregamos tags también
-        ), axis=1
-    )
+    # Usamos la función auxiliar en lugar de lambda
+    df['texto_busqueda'] = df.apply(combinar_columnas, axis=1)
     
     df['intencion_preprocesada'] = df['texto_busqueda'].apply(preprocesar_texto)
     return df
@@ -118,7 +115,7 @@ def inicializar_vectorizador(df):
     return vectorizer, matriz_tfidf
 
 # -----------------------------------------------------------------------
-# 3. CONEXIÓN A GOOGLE SHEETS (MEMORIA)
+# 3. GOOGLE SHEETS
 # -----------------------------------------------------------------------
 
 def registrar_pregunta_en_sheets(consulta):
@@ -138,4 +135,69 @@ def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
         if "google_credentials" in st.secrets:
             creds_dict = dict(st.secrets["google_credentials"])
             gc = gspread.service_account_from_dict(creds_dict)
-            sh = gc.open("Cere
+            sh = gc.open("Cerebro_Bot")
+            try:
+                worksheet = sh.worksheet("Usuarios")
+            except:
+                worksheet = sh.sheet1 
+            ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            worksheet.append_row([ahora, nombre, apellidos, rut, telefono, email])
+            return True
+    except Exception as e:
+        st.error(f"Error guardando paciente: {e}")
+        return False
+
+# -----------------------------------------------------------------------
+# 4. LÓGICA DE RESPUESTA
+# -----------------------------------------------------------------------
+
+def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.20):
+    
+    consulta_clean = consulta.lower().strip()
+    palabras_usuario = consulta_clean.split()
+
+    # Filtro Social (Solo si es corto)
+    if len(palabras_usuario) < 5: 
+        for frase, respuesta in CHARLA_SOCIAL.items():
+            if frase in consulta_clean:
+                return respuesta
+
+    # Filtro Emocional
+    for emocion, respuesta in RESPUESTAS_EMOCIONALES.items():
+        if emocion in consulta_clean:
+            return respuesta
+
+    # Búsqueda Médica
+    consulta_preprocesada = preprocesar_texto(consulta)
+    
+    if not consulta_preprocesada:
+        return "Disculpa, no te capté bien. ¿Me lo podrías explicar con otras palabras? 🤔"
+
+    consulta_vector = vectorizer.transform([consulta_preprocesada])
+    similitudes = cosine_similarity(consulta_vector, matriz_tfidf)
+    mejor_sim_score = similitudes.max()
+    mejor_sim_index = similitudes.argmax()
+    
+    if mejor_sim_score > umbral:
+        respuesta_medica = df.iloc[mejor_sim_index]['respuesta_validada']
+        preambulo = random.choice(FRASES_EMPATIA)
+        return preambulo + respuesta_medica
+    else:
+        registrar_pregunta_en_sheets(consulta)
+        return (
+            "Sabes, tu pregunta es súper específica y prefiero no 'carrilearme' (improvisar). "
+            "Como es un tema médico delicado, mejor dejé anotada tu duda para que el Dr. la revise. "
+            "Mientras tanto, ¿hay algo más estándar en lo que te pueda orientar?"
+        )
+
+def revisar_guardrail_emergencia(consulta):
+    consulta_lower = consulta.lower()
+    for palabra in PALABRAS_ALARMA:
+        if palabra in consulta_lower:
+            return True 
+    return False
+
+def responder_consulta(consulta, df, vectorizer, matriz_tfidf):
+    if revisar_guardrail_emergencia(consulta):
+        return MENSAJE_ALERTA
+    return buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf)
