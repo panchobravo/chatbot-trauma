@@ -1,5 +1,5 @@
 # =======================================================================
-# CHATBOT_BACKEND.PY - ALGORITMO DE BÚSQUEDA VECTORIAL MEJORADO (V4.0)
+# CHATBOT_BACKEND.PY - V5.0 "HUMAN TOUCH" (ESTILO CLAUDE-LITE)
 # =======================================================================
 
 import json
@@ -14,9 +14,10 @@ import gspread
 import random
 
 # -----------------------------------------------------------------------
-# 1. CONSTANTES Y CONFIGURACIÓN
+# 1. PERSONALIDAD Y EMPATÍA (EL CORAZÓN DEL BOT)
 # -----------------------------------------------------------------------
 
+# Palabras que activan la ALARMA INMEDIATA
 PALABRAS_ALARMA = [
     "fiebre", "pus", "secreción", "infección", "sangrado abundante", 
     "hemorragia", "dolor insoportable", "desmayo", "no puedo respirar",
@@ -32,48 +33,59 @@ Si la herida se abrió, ves material (placas/hueso) o hay infección, **NO toque
 **Dirígete a Urgencias ahora mismo.**
 """
 
+# DICCIONARIO SOCIAL: Respuestas rápidas a interacciones humanas
 CHARLA_SOCIAL = {
-    "como esta el doctor": "¡El Dr. está excelente! Operando, pero atento a ustedes.",
-    "gracias": "No hay de qué. Vamos paso a paso con esa recuperación. 💪",
-    "hola": "¡Hola! ¿Cómo va esa recuperación hoy?",
-    "chao": "¡Descansa! Recuerda mantener la pierna en alto.",
-    "adios": "¡Que tengas buen descanso!",
-    "eres un robot": "Soy un asistente virtual entrenado por el Dr., pero mi objetivo es ayudarte de verdad.",
-    "eres humano": "Soy una IA asistente del equipo médico. Estoy aquí para que no te sientas solo/a con tus dudas."
+    "como esta el doctor": "¡El Dr. está a mil por hora operando! Pero me dejó encargado de cuidarlos. ¿Tú cómo sigues?",
+    "gracias": "¡De nada! Estamos remando juntos en esto. 💪",
+    "muchas gracias": "Un placer. Cualquier cosa chica que te preocupe, escríbeme.",
+    "hola": "¡Hola! ¿Cómo amaneció esa pierna hoy?",
+    "chao": "¡Descansa! Intenta mantener la pierna en alto un ratito.",
+    "adios": "¡Que tengas buen descanso! Cuídate.",
+    "eres un robot": "Soy una IA entrenada por el equipo médico, pero créeme que me preocupo por tu recuperación.",
+    "eres humano": "Soy tu asistente virtual, pero detrás de mis respuestas está la experiencia de todo el equipo médico.",
+    "te equivocaste": "¡Ups! Tienes razón, a veces aprendo lento. Gracias por la paciencia.",
+    "buenos dias": "¡Buen día! ¿Cómo pasaste la noche?",
+    "buenas tardes": "¡Buenas tardes! ¿En qué te puedo ayudar en este momento?"
 }
 
+# DICCIONARIO EMOCIONAL: Detecta el estado de ánimo
 RESPUESTAS_EMOCIONALES = {
-    "mal": "Siento escuchar eso. La recuperación tiene días difíciles. ¿Tienes mucho dolor o es algo más?",
-    "mas o menos": "Entiendo, hay días mejores y peores. ¿Qué es lo que más te molesta hoy?",
-    "asustado": "Es normal sentir miedo después de una cirugía. Estoy aquí para orientarte. ¿Qué síntomas te preocupan?",
-    "triste": "El ánimo afecta la recuperación. ¡Ánimo! Esto es temporal. ¿Te duele algo físicamente?",
-    "bien": "¡Qué buena noticia! Me alegra mucho. ¿Tienes alguna duda puntual hoy?",
-    "mejor": "¡Excelente! Vamos progresando. Sigue cuidándote igual."
+    "mal": "Uhh, siento escuchar eso. La recuperación es una montaña rusa, hay días malos. ¿Es mucho dolor o es el encierro?",
+    "mas o menos": "Te entiendo. Esos días 'ni fu ni fa' son pesados. ¿Te duele algo puntual o es cansancio general?",
+    "asustado": "Es súper normal tener miedo, sobre todo después de una cirugía. Aquí estamos para darte seguridad. ¿Qué síntoma te asusta?",
+    "tengo miedo": "Tranquilo/a. El miedo es normal, pero no dejes que te paralice. Cuéntame qué sientes y lo revisamos.",
+    "triste": "Ánimo... Sé que es difícil estar quieto/a tanto tiempo, pero piensa que cada día es uno menos para el alta. 💪",
+    "bien": "¡Qué alegría leer eso! Esas son las noticias que nos gusta recibir. Sigue así.",
+    "mejor": "¡Excelente! Significa que el cuerpo está haciendo su trabajo. No bajemos la guardia eso sí."
 }
 
+# SAL DE LA RUTINA: Frases variadas para iniciar la respuesta médica
 FRASES_EMPATIA = [
-    "Comprendo tu inquietud. ",
-    "Es una duda muy frecuente. ",
-    "Para tu tranquilidad: ",
-    "Te explico lo que indica el Dr.: ",
-    "Mira, lo importante es esto: ",
-    "" 
+    "Te entiendo perfecto. Mira, sobre eso el protocolo es: ",
+    "Buena pregunta. Para tu tranquilidad, te cuento: ",
+    "Es súper común esa duda. Lo que indicamos siempre es: ",
+    "Claro, déjame aclararte ese punto importante: ",
+    "Entiendo que eso te preocupe. La indicación médica es: ",
+    "Justo el Dr. siempre recalca esto: ",
+    "Mira, para que no corras riesgos innecesarios: ",
+    "Aquí la regla de oro es la siguiente: ",
+    "" # A veces es mejor ser directo y no decir nada antes
 ]
 
 # -----------------------------------------------------------------------
-# 2. PROCESAMIENTO NLP (CORE)
+# 2. PROCESAMIENTO NLP (CORE INTELIGENTE)
 # -----------------------------------------------------------------------
 
 def preprocesar_texto(texto):
     if not isinstance(texto, str):
         return ""
     texto = texto.lower()
+    # Eliminamos puntuación para que no moleste
     texto = ''.join([char for char in texto if char not in string.punctuation])
     try:
         stop_words_es = stopwords.words('spanish')
     except:
-        # Fallback si NLTK no descarga las stopwords
-        stop_words_es = ["el", "la", "los", "las", "un", "una", "y", "o", "de", "a", "en", "que", "me", "mi", "mis"]
+        stop_words_es = ["el", "la", "los", "las", "un", "una", "y", "o", "de", "a", "en", "que", "me", "mi", "mis", "con", "por", "para"]
     
     palabras = texto.split()
     palabras_filtradas = [w for w in palabras if w not in stop_words_es]
@@ -81,21 +93,22 @@ def preprocesar_texto(texto):
 
 def cargar_y_preparar_base(archivo_json):
     """
-    Carga el JSON y crea un campo 'texto_busqueda' que concatena
-    la intención clave + las palabras clave. Esto corrige el error
-    de que el bot no encuentre términos que solo están en los tags.
+    Fusión de Inteligencia: Une 'intencion' + 'palabras_clave' + 'tags'
+    para crear un súper campo de búsqueda y entender mejor el contexto.
     """
     with open(archivo_json, 'r', encoding='utf-8') as f:
         data = json.load(f)
     df = pd.DataFrame(data)
     
-    # FUSIONAMOS INTENCIÓN + PALABRAS CLAVE (SOLUCIÓN AL BUG)
+    # FUSIÓN DE CAMPOS PARA MAXIMIZAR COMPRENSIÓN
     df['texto_busqueda'] = df.apply(
-        lambda row: row['intencion_clave'] + " " + " ".join(row['palabras_clave']), 
-        axis=1
+        lambda row: (
+            str(row['intencion_clave']) + " " + 
+            " ".join(row['palabras_clave']) + " " + 
+            " ".join(row.get('tags', [])) # Agregamos tags también
+        ), axis=1
     )
     
-    # Vectorizamos sobre el campo fusionado
     df['intencion_preprocesada'] = df['texto_busqueda'].apply(preprocesar_texto)
     return df
 
@@ -105,7 +118,7 @@ def inicializar_vectorizador(df):
     return vectorizer, matriz_tfidf
 
 # -----------------------------------------------------------------------
-# 3. CONEXIÓN A GOOGLE SHEETS
+# 3. CONEXIÓN A GOOGLE SHEETS (MEMORIA)
 # -----------------------------------------------------------------------
 
 def registrar_pregunta_en_sheets(consulta):
@@ -125,65 +138,4 @@ def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
         if "google_credentials" in st.secrets:
             creds_dict = dict(st.secrets["google_credentials"])
             gc = gspread.service_account_from_dict(creds_dict)
-            sh = gc.open("Cerebro_Bot")
-            try:
-                worksheet = sh.worksheet("Usuarios")
-            except:
-                worksheet = sh.sheet1 
-            ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            worksheet.append_row([ahora, nombre, apellidos, rut, telefono, email])
-            return True
-    except Exception as e:
-        st.error(f"Error guardando paciente: {e}")
-        return False
-
-# -----------------------------------------------------------------------
-# 4. LÓGICA DE RESPUESTA
-# -----------------------------------------------------------------------
-
-def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.20): # Umbral optimizado
-    
-    consulta_clean = consulta.lower().strip()
-    palabras_usuario = consulta_clean.split()
-
-    # 1. FILTRO SOCIAL (Solo si la frase es corta < 5 palabras)
-    if len(palabras_usuario) < 5: 
-        for frase, respuesta in CHARLA_SOCIAL.items():
-            if frase in consulta_clean:
-                return respuesta
-
-    # 2. FILTRO EMOCIONAL
-    for emocion, respuesta in RESPUESTAS_EMOCIONALES.items():
-        if emocion in consulta_clean:
-            return respuesta
-
-    # 3. BÚSQUEDA MÉDICA (VECTORIAL)
-    consulta_preprocesada = preprocesar_texto(consulta)
-    
-    if not consulta_preprocesada:
-        return "Disculpa, no entendí bien. ¿Podrías explicármelo con otras palabras?"
-
-    consulta_vector = vectorizer.transform([consulta_preprocesada])
-    similitudes = cosine_similarity(consulta_vector, matriz_tfidf)
-    mejor_sim_score = similitudes.max()
-    mejor_sim_index = similitudes.argmax()
-    
-    if mejor_sim_score > umbral:
-        respuesta_medica = df.iloc[mejor_sim_index]['respuesta_validada']
-        preambulo = random.choice(FRASES_EMPATIA)
-        return preambulo + respuesta_medica
-    else:
-        registrar_pregunta_en_sheets(consulta)
-        return "Entiendo tu pregunta, pero como es un tema delicado y no tengo la respuesta exacta validada por el Dr., prefiero no arriesgarme. Ya dejé anotada tu duda para preguntarle."
-
-def revisar_guardrail_emergencia(consulta):
-    consulta_lower = consulta.lower()
-    for palabra in PALABRAS_ALARMA:
-        if palabra in consulta_lower:
-            return True 
-    return False
-
-def responder_consulta(consulta, df, vectorizer, matriz_tfidf):
-    if revisar_guardrail_emergencia(consulta):
-        return MENSAJE_ALERTA
-    return buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf)
+            sh = gc.open("Cere
