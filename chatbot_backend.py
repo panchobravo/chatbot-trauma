@@ -71,7 +71,7 @@ def registrar_pregunta_en_sheets(consulta):
             gc = gspread.service_account_from_dict(creds_dict)
             
             # 3. Abrir la hoja
-            sh = gc.open("BotTrauma") 
+            sh = gc.open("Cerebro_Bot") 
             worksheet = sh.sheet1
             
             # 4. Escribir
