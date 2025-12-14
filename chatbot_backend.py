@@ -1,5 +1,5 @@
 # =======================================================================
-# CHATBOT_BACKEND.PY - V8.1 HOTFIX (CORRECCIÓN DE EMERGENCIA)
+# CHATBOT_BACKEND.PY - V9.1 (TONO PROFESIONAL & PRIORIDAD CLÍNICA)
 # =======================================================================
 
 import json
@@ -15,10 +15,10 @@ import random
 import re
 
 # -----------------------------------------------------------------------
-# 1. CONFIGURACIÓN Y DICCIONARIOS
+# 1. CONFIGURACIÓN DE DATOS
 # -----------------------------------------------------------------------
 
-# Diccionario de Modismos (Traductor)
+# Mapeo de Jerga -> Español Neutro (Para que el bot entienda, pero no hable mal)
 CHILENISMOS_MAP = {
     r"\bcaleta\b": "mucho", r"\bmas o menos\b": "regular", r"\bmaoma\b": "regular",
     r"\bpal gato\b": "mal", r"\bbrigido\b": "intenso", r"\bcuatico\b": "grave", 
@@ -27,7 +27,8 @@ CHILENISMOS_MAP = {
     r"\bpololo\b": "pareja", r"\bpucho\b": "cigarro", r"\bchao\b": "adios", 
     r"\bharto\b": "mucho", r"\bsipo\b": "si", r"\byapo\b": "ya", 
     r"\bal tiro\b": "inmediatamente", r"\bjoya\b": "excelente", r"\bbacan\b": "excelente", 
-    r"\bfome\b": "aburrido", r"\bcharcha\b": "malo"
+    r"\bfome\b": "aburrido", r"\bcharcha\b": "malo", r"\bfumar\b": "tabaco",
+    r"\bfumo\b": "tabaco", r"\bfumas\b": "tabaco"
 }
 
 PALABRAS_ALARMA = [
@@ -39,62 +40,55 @@ PALABRAS_ALARMA = [
 ]
 
 MENSAJE_ALERTA = """
-🚨 **ALERTA DE EMERGENCIA** 🚨
-Lo que describes NO es normal y requiere evaluación médica presencial inmediata.
-Si la herida se abrió, ves material (placas/hueso) o hay infección, **NO toques nada**.
-**Dirígete a Urgencias ahora mismo.**
+🚨 **ALERTA DE SEGURIDAD** 🚨
+Lo que describes requiere evaluación médica inmediata.
+Si presentas herida abierta, exposición de material o signos de infección, **NO manipules la zona**.
+**Dirígete al Servicio de Urgencia más cercano ahora mismo.**
 """
 
-# Diccionario Mixto: Social + Emocional (Unificado para que no fallen)
-DICCIONARIO_RAPIDO = {
-    "si": "Entiendo. Si el síntoma persiste, revisa las indicaciones anteriores.",
-    "sipo": "Vale. Si eso te preocupa, cuéntame más detalles.",
-    "obvio": "Claro. ¿En qué más te puedo ayudar?",
-    "ya": "Perfecto. ¿Alguna otra duda?",
-    "no": "Entendido. Recuerda mantener reposo.",
-    "nopo": "Ok. Avísame si cambia algo.",
-    "nada": "Me alegro entonces. ¡A seguir cuidándose!",
-    "hola": "¡Hola! ¿Cómo amaneció esa pierna hoy?",
-    "wena": "¡Wena! ¿Cómo va la recuperación?",
+# Respuestas Sociales (Fallback) - Tono Profesional y Empático
+DICCIONARIO_SOCIAL_FALLBACK = {
+    "si": "Comprendo. Si el síntoma persiste, por favor sigue las indicaciones de reposo y elevación.",
+    "sipo": "Entendido. Si tienes más antecedentes que agregar, estoy atento.",
+    "obvio": "Claro. ¿En qué más puedo orientarte?",
+    "ya": "Perfecto. ¿Alguna otra consulta?",
+    "no": "Bien. Recuerda que el reposo es fundamental para tu evolución.",
+    "nopo": "De acuerdo. Cualquier cambio nos avisas.",
+    "nada": "Me alegro. A seguir con los cuidados indicados.",
+    "hola": "¡Hola! Bienvenido al asistente virtual de Traumatología. ¿Cómo te has sentido?",
+    "wena": "¡Hola! ¿Cómo va esa recuperación?",
     "buenos dias": "¡Buen día! ¿Cómo pasaste la noche?",
-    "chao": "¡Cuídate! Pata arriba y a descansar.",
-    "gracias": "¡De nada! A ponerle empeño a esa recuperación. 💪",
-    "vale": "¡De nada!",
-    "eres un robot": "Soy una IA asistente del equipo médico, lista para ayudarte.",
-    "ayuda": "Estoy aquí. Cuéntame qué te pasa o qué duda tienes.",
-    
-    # Emociones
-    "mal": "Pucha, qué lata. La recuperación tiene días pesados. ¿Es mucho dolor físico?",
-    "pesimo": "Lo siento mucho. A veces dan ganas de tirar la toalla, pero falta poco. ¿Revisamos tus remedios?",
-    "regular": "Ya veo, esos días 'ni fu ni fa'. Paciencia, es parte del proceso.",
-    "bien": "¡Buena! Esas noticias nos alegran el día. Sigue así.",
-    "mejor": "¡Excelente! Significa que vamos impeque. A no descuidarse eso sí."
+    "chao": "Hasta luego. Recuerda mantener la extremidad elevada.",
+    "gracias": "No hay de qué. Estamos comprometidos con tu recuperación. 💪",
+    "vale": "De nada.",
+    "eres un robot": "Soy un asistente virtual basado en inteligencia artificial, diseñado para apoyar al equipo médico.",
+    "ayuda": "Estoy aquí para orientarte. Cuéntame qué síntoma tienes o qué duda necesitas resolver.",
+    "mal": "Lamento escuchar eso. El postoperatorio puede ser difícil. ¿El malestar es por dolor intenso?",
+    "pesimo": "Lo siento mucho. Si el dolor o el malestar no ceden con los medicamentos indicados, avísanos.",
+    "regular": "Entiendo, hay días de evolución más lenta. Ten paciencia, es parte del proceso cicatrizal.",
+    "bien": "¡Qué buena noticia! Una buena evolución nos alegra a todos. Sigue cuidándote.",
+    "mejor": "¡Excelente! Significa que el tratamiento está funcionando."
 }
 
 FRASES_EMPATIA = [
-    "Te explico lo que indica el protocolo: ",
-    "Buena pregunta. Mira: ",
-    "Es una duda común. Lo que hacemos es: ",
-    "Claro, déjame aclararte este punto: ",
-    "Para tu tranquilidad, te cuento: "
+    "Según nuestro protocolo clínico: ",
+    "Es una consulta frecuente. Te explico: ",
+    "Para tu tranquilidad, la indicación médica es: ",
+    "Respecto a eso, lo importante es: ",
+    "Entiendo tu preocupación. La pauta indica: "
 ]
 
 # -----------------------------------------------------------------------
-# 2. MOTOR NLP (SIMPLIFICADO Y SEGURO)
+# 2. PROCESAMIENTO NLP
 # -----------------------------------------------------------------------
 
 def normalizar_texto(texto):
     if not isinstance(texto, str): return ""
     texto = texto.lower()
-    
-    # 1. Chilenismos
     for slang, standard in CHILENISMOS_MAP.items():
         texto = re.sub(slang, standard, texto)
-    
-    # 2. Diminutivos
+    # Stemming básico para diminutivos comunes
     texto = re.sub(r'(\w+)ito\b', r'\1', texto) 
-    
-    # 3. Limpieza de puntuación
     texto = ''.join([char for char in texto if char not in string.punctuation])
     return texto
 
@@ -111,13 +105,12 @@ def cargar_y_preparar_base(archivo_json):
     return df
 
 def inicializar_vectorizador(df):
-    # Usamos char_wb con rango 3-5 para tolerancia a typos
     vectorizer = TfidfVectorizer(analyzer='char_wb', ngram_range=(3, 5))
     matriz_tfidf = vectorizer.fit_transform(df['intencion_preprocesada'])
     return vectorizer, matriz_tfidf
 
 # -----------------------------------------------------------------------
-# 3. SHEETS & UTILS
+# 3. CONECTIVIDAD SHEETS
 # -----------------------------------------------------------------------
 
 def conectar_sheets():
@@ -153,23 +146,16 @@ def registrar_feedback(consulta, respuesta, calificacion):
     except: pass
 
 # -----------------------------------------------------------------------
-# 4. LÓGICA CENTRAL (ARREGLADA)
+# 4. LÓGICA DE NEGOCIO (PRIORIDAD CLÍNICA)
 # -----------------------------------------------------------------------
 
-def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.15): # Umbral bajado a 0.15 para captar mejor "fumar"
+def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.15):
     
     # 1. Normalización
     texto_norm = normalizar_texto(consulta)
-    palabras = texto_norm.split()
-
-    # 2. FILTRO RÁPIDO (SOCIAL / EMOCIONAL) - ¡AQUÍ ESTABA EL ERROR!
-    # Ahora revisamos si ALGUNA palabra de la frase está en nuestro diccionario rápido
-    # Esto asegura que "hola ayuda" o "estoy mal" funcionen.
-    for palabra in palabras:
-        if palabra in DICCIONARIO_RAPIDO:
-            return DICCIONARIO_RAPIDO[palabra], []
-
-    # 3. BÚSQUEDA MÉDICA (VECTORIAL)
+    
+    # 2. BÚSQUEDA MÉDICA (PRIORIDAD 1)
+    # Ejecutamos la búsqueda vectorial PRIMERO. Si es un tema médico, manda esto.
     consulta_vec = vectorizer.transform([texto_norm])
     similitudes = cosine_similarity(consulta_vec, matriz_tfidf)
     mejor_score = similitudes.max()
@@ -180,12 +166,22 @@ def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.15):
         tags = df.iloc[idx].get('tags', [])
         preambulo = random.choice(FRASES_EMPATIA)
         return preambulo + respuesta_base, tags
-    else:
-        registrar_pregunta_en_sheets(consulta)
-        return (
-            "Sabes, esa pregunta es súper específica y prefiero no 'carrilearme'. "
-            "Dejé anotada tu duda para el Dr. ¿Hay algo más estándar en lo que te pueda orientar?", []
-        )
+
+    # 3. FALLBACK SOCIAL (PRIORIDAD 2)
+    # Solo si NO es médico, vemos si es un saludo o emoción simple.
+    palabras = texto_norm.split()
+    for palabra in palabras:
+        if palabra in DICCIONARIO_SOCIAL_FALLBACK:
+            return DICCIONARIO_SOCIAL_FALLBACK[palabra], []
+
+    # 4. SIN RESPUESTA (FALLBACK PROFESIONAL)
+    registrar_pregunta_en_sheets(consulta)
+    return (
+        "Entiendo tu consulta, pero al ser un caso clínico específico que escapa a mis protocolos generales, "
+        "por seguridad prefiero no dar una respuesta automática. "
+        "He dejado registrada tu inquietud para que el equipo médico la revise. "
+        "¿Hay algo más sobre lo que te pueda orientar mientras tanto?", []
+    )
 
 def revisar_guardrail_emergencia(consulta):
     for p in PALABRAS_ALARMA:
@@ -193,7 +189,7 @@ def revisar_guardrail_emergencia(consulta):
     return False
 
 def responder_consulta(consulta, df, vectorizer, matriz_tfidf, contexto_previo=""):
-    # Fusión de Contexto simple
+    # Fusión de Contexto
     if len(consulta.split()) < 4 and contexto_previo:
         consulta_aumentada = f"{consulta} {contexto_previo}"
     else:
