@@ -185,13 +185,17 @@ def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
     except: return False
 
 def registrar_feedback(consulta, respuesta, calificacion):
-    try:
-        sh = conectar_sheets()
-        if sh:
-            try: ws = sh.worksheet("Feedback")
-            except: ws = sh.add_worksheet(title="Feedback", rows=1000, cols=4)
-            ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta, respuesta[:50], calificacion])
-    except: pass
+    # Sin try/except para que veas el error si falla
+    sh = conectar_sheets()
+    if sh:
+        # Intenta buscar la hoja, si no existe avisa
+        try: 
+            ws = sh.worksheet("Feedback")
+        except: 
+            st.error("Error: No encuentro la pestaña 'Feedback' en el Excel.")
+            return
+
+        ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta, respuesta[:50], calificacion])
 
 # -----------------------------------------------------------------------
 # 4. LÓGICA DE DECISIÓN (CEREBRO PRINCIPAL)
