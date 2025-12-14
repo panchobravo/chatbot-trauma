@@ -158,25 +158,23 @@ def responder_consulta(consulta, df, vectorizer, matriz_tfidf):
 # -----------------------------------------------------------------------
 # 4. FUNCIÓN DE REGISTRO DE PACIENTES (NUEVO)
 # -----------------------------------------------------------------------
-def guardar_paciente_en_sheets(nombre, rut, telefono, email):
+def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
     """Guarda los datos del paciente en la pestaña 'Usuarios'"""
     try:
         if "google_credentials" in st.secrets:
             creds_dict = dict(st.secrets["google_credentials"])
             gc = gspread.service_account_from_dict(creds_dict)
             
-            # Abrimos el archivo y seleccionamos la pestaña 'Usuarios'
             sh = gc.open("Cerebro_Bot")
             
-            # Intentamos acceder a la hoja 'Usuarios', si no existe, usamos la hoja 1 por defecto
             try:
                 worksheet = sh.worksheet("Usuarios")
             except:
-                # Si se te olvidó crear la pestaña, esto evita que la app se caiga
                 worksheet = sh.sheet1 
             
             ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            worksheet.append_row([ahora, nombre, rut, telefono, email])
+            # AHORA GUARDAMOS EL APELLIDO EN SU PROPIA COLUMNA
+            worksheet.append_row([ahora, nombre, apellidos, rut, telefono, email])
             return True
     except Exception as e:
         st.error(f"Error guardando paciente: {e}")
