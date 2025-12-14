@@ -1,5 +1,5 @@
 # =======================================================================
-# CHATBOT_BACKEND.PY - V13.1 (FULL RESTORED & UPDATED)
+# CHATBOT_BACKEND.PY - V14.0 (DIAGNÓSTICO SHEETS + FILTRO ABSURDO)
 # =======================================================================
 
 import json
@@ -15,31 +15,24 @@ import random
 import re
 
 # -----------------------------------------------------------------------
-# 1. BASE CULTURAL, EMOCIONAL Y DE SEGURIDAD
+# 1. BASE CULTURAL, SEGURIDAD Y FILTROS
 # -----------------------------------------------------------------------
 
-# MAPA DE TRADUCCIÓN (V13: Incluye Groserías como síntomas de dolor/estrés)
 CHILENISMOS_MAP = {
     # Typos y Expresiones Graves
-    r"\bquiero la pata\b": "quebre la pierna", 
-    r"\bme quiero\b": "me quebre", 
-    r"\bme saque la cresta\b": "caida grave",
-    r"\bme saque la chucha\b": "caida grave",
+    r"\bquiero la pata\b": "quebre la pierna", r"\bme quiero\b": "me quebre", 
+    r"\bme saque la cresta\b": "caida grave", r"\bme saque la chucha\b": "caida grave",
     
     # Anatomía y Objetos
     r"\bpata\b": "pierna", r"\bguata\b": "estomago", r"\bpucho\b": "cigarro",
     r"\bfumo\b": "tabaco", r"\bfumas\b": "tabaco", r"\bfumar\b": "tabaco",
     
-    # Insultos = Dolor/Frustración (Traducción para evitar fallback)
-    r"\bputa la wea\b": "estoy mal",
-    r"\bconchesumadre\b": "dolor terrible",
-    r"\bconchetumare\b": "dolor terrible",
-    r"\bctm\b": "dolor terrible",
-    r"\b(c+s+m+)\b": "dolor terrible", # Atrapa "csmmmmm"
-    r"\bmierda\b": "dolor",
-    r"\bwea\b": "cosa",
+    # Insultos = Dolor/Frustración
+    r"\bputa la wea\b": "estoy mal", r"\bconchesumadre\b": "dolor terrible",
+    r"\bconchetumare\b": "dolor terrible", r"\bctm\b": "dolor terrible",
+    r"\b(c+s+m+)\b": "dolor terrible", r"\bmierda\b": "dolor", r"\bwea\b": "cosa",
     
-    # Intensidad y Estado
+    # Intensidad
     r"\bcago\b": "daño", r"\bcaleta\b": "mucho", r"\bbrigido\b": "intenso", 
     r"\bpal gato\b": "mal", r"\bmas o menos\b": "regular", r"\bmaoma\b": "regular",
     r"\bhecho bolsa\b": "muy mal", r"\bcuatico\b": "grave",
@@ -48,12 +41,18 @@ CHILENISMOS_MAP = {
     r"\bjoya\b": "excelente", r"\bfilete\b": "excelente", r"\bbacan\b": "excelente",
     r"\bseco\b": "experto",
     
-    # Verbos y Conectores
+    # Verbos
     r"\bcachai\b": "entiendes", r"\bpesca\b": "atencion", r"\bal tiro\b": "inmediatamente", 
     r"\bsipo\b": "si", r"\byapo\b": "ya", r"\bnopo\b": "no"
 }
 
-# Lista ampliada para detectar tono urgente y ajustar la respuesta
+# NUEVO: Palabras que bloquean la respuesta médica por ser absurdas/ofensivas fuera de contexto
+PALABRAS_ABSURDAS = [
+    "neumatico", "neumaticos", "llanta", "vidrio", "caca", "piedra", 
+    "cloro", "detergente", "copi", "pico", "pene", "vagina", "sexo", "tula", 
+    "chupa", "idiota", "tonto", "estupido", "bomba", "disparo"
+]
+
 GROSERIAS_DOLOR = ["ctm", "conchetumare", "conchesumadre", "mierda", "pico", "puta", "recontra", "chucha", "csm"]
 
 PALABRAS_ALARMA = [
@@ -64,12 +63,6 @@ PALABRAS_ALARMA = [
     "tornillo", "supurando", "mal olor", "negro", "necrosis",
     "quebre", "quiebro", "rompi", "fractura", "sono un crack"
 ]
-# Palabras que activan el rechazo inmediato por ser absurdas o fuera de contexto médico
-PALABRAS_ABSURDAS = [
-    "neumatico", "neumaticos", "llanta", "vidrio", "caca", "mierda", "piedra", 
-    "cloro", "detergente", "copi", "pico", "pene", "vagina", "sexo", "tula", 
-    "chupa", "idiota", "tonto", "estupido"
-]
 
 MENSAJE_ALERTA = """
 🚨 **ALERTA DE SEGURIDAD** 🚨
@@ -78,17 +71,13 @@ Lo que describes NO es normal y requiere evaluación médica inmediata.
 Por favor, dirígete al **Servicio de Urgencia** más cercano ahora mismo.
 """
 
-# DICCIONARIO "PERSONALIDAD + ANTI-LOOP"
 RESPUESTAS_RAPIDAS = {
-    # Loop Breakers (Afirmaciones/Negaciones)
     "si": "Perfecto. Si tienes otra duda, dímela.",
     "bueno": "Quedamos en eso.",
     "ya": "Súper. ¿Algo más?",
     "ok": "Vale, seguimos.",
     "no": "Entendido. A descansar entonces.",
     "nada": "Me alegro. ¡A seguir cuidándose!",
-    
-    # Saludos y Cortesía
     "hola": "¡Hola! Bienvenido al asistente virtual del Equipo de Tobillo y Pie. ¿Cómo amaneciste hoy?",
     "wena": "¡Wena! ¿Cómo va esa recuperación?",
     "buenos dias": "¡Buen día! Espero que hayas descansado bien.",
@@ -96,14 +85,10 @@ RESPUESTAS_RAPIDAS = {
     "chao": "¡Cuídate mucho! Pata arriba y a descansar.",
     "gracias": "¡De nada! Estamos comprometidos contigo. 💪",
     "vale": "De nada.",
-    
-    # Identidad y Doctor
     "eres un robot": "Soy una IA entrenada por el equipo médico para acompañarte 24/7.",
     "quien eres": "Soy tu asistente virtual de Traumatología.",
     "como esta el doctor": "¡El Dr. está a mil operando! Pero me dejó todos sus protocolos para ayudarte.",
     "donde esta el doctor": "Probablemente en pabellón salvando tobillos, pero yo te ayudo por mientras.",
-    
-    # Emociones
     "ayuda": "Estoy aquí. Cuéntame qué sientes o qué duda tienes.",
     "mal": "Pucha, lo siento. La recuperación es una montaña rusa. ¿Es mucho dolor físico?",
     "pesimo": "Lo siento mucho. Si el dolor no cede con los remedios, avísanos.",
@@ -114,7 +99,6 @@ RESPUESTAS_RAPIDAS = {
     "estoy triste": "Ánimo... Sé que aburre estar quieto, pero piensa que el hueso se está pegando ahora mismo. 💪"
 }
 
-# Frases suaves para situaciones normales
 FRASES_EMPATIA = [
     "Es una duda muy frecuente. Te cuento: ",
     "Mira, según el protocolo médico: ",
@@ -123,7 +107,6 @@ FRASES_EMPATIA = [
     "Claro, déjame explicarte este punto: "
 ]
 
-# Frases directas para urgencia/dolor
 FRASES_URGENCIA = [
     "Entiendo que el dolor es fuerte. Ojo con esto: ",
     "Mantén la calma. Mira: ",
@@ -139,9 +122,7 @@ def normalizar_texto(texto):
     if not isinstance(texto, str): return ""
     texto = texto.lower()
     for slang, standard in CHILENISMOS_MAP.items():
-        # Usamos regex para reemplazar palabras completas
         texto = re.sub(slang, standard, texto)
-    # Stemming diminutivos
     texto = re.sub(r'(\w+)ito\b', r'\1', texto) 
     texto = ''.join([char for char in texto if char not in string.punctuation])
     return texto
@@ -164,56 +145,74 @@ def inicializar_vectorizador(df):
     return vectorizer, matriz_tfidf
 
 # -----------------------------------------------------------------------
-# 3. CONECTIVIDAD SHEETS (ESTO FALTABA Y CAUSABA EL ERROR)
+# 3. CONECTIVIDAD SHEETS (CORREGIDO Y RUIDOSO)
 # -----------------------------------------------------------------------
 
 def conectar_sheets():
-    if "google_credentials" in st.secrets:
+    # Validación explícita de Secrets
+    if "google_credentials" not in st.secrets:
+        st.error("🚨 ERROR CRÍTICO: No encuentro 'google_credentials' en los Secrets de Streamlit.")
+        return None
+    
+    try:
         creds_dict = dict(st.secrets["google_credentials"])
         gc = gspread.service_account_from_dict(creds_dict)
         return gc.open("Cerebro_Bot")
-    return None
+    except Exception as e:
+        st.error(f"🚨 ERROR AL CONECTAR CON GOOGLE: {e}")
+        return None
 
 def registrar_pregunta_en_sheets(consulta):
+    sh = conectar_sheets()
+    if sh is None: return
+
     try:
-        sh = conectar_sheets()
-        if sh: sh.sheet1.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta])
-    except: pass
+        # Intentamos Hoja1 por defecto, si falla probamos índice 0
+        try: ws = sh.worksheet("Hoja1")
+        except: ws = sh.get_worksheet(0)
+        
+        ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta])
+    except Exception as e:
+        st.error(f"🚨 NO SE PUDO GUARDAR LA PREGUNTA: {e}")
 
 def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
+    sh = conectar_sheets()
+    if sh is None: return False
+
     try:
-        sh = conectar_sheets()
-        if sh:
-            try: ws = sh.worksheet("Usuarios")
-            except: ws = sh.sheet1
-            ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), nombre, apellidos, rut, telefono, email])
-            return True
-    except: return False
+        ws = sh.worksheet("Usuarios")
+        ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), nombre, apellidos, rut, telefono, email])
+        return True
+    except gspread.exceptions.WorksheetNotFound:
+        st.error("🚨 ERROR: No existe la pestaña 'Usuarios' en tu Excel. Por favor créala.")
+        return False
+    except Exception as e:
+        st.error(f"🚨 ERROR AL GUARDAR PACIENTE: {e}")
+        return False
 
 def registrar_feedback(consulta, respuesta, calificacion):
-    # VERSIÓN DE DIAGNÓSTICO (Sin silenciador)
     sh = conectar_sheets()
-    if sh:
-        try:
-            # Intenta abrir la hoja. Si falló el nombre, aquí saltará el error.
-            ws = sh.worksheet("Feedback")
-            ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta, respuesta[:50], calificacion])
-        except gspread.exceptions.WorksheetNotFound:
-            st.error("🚨 ERROR CRÍTICO: No existe la pestaña llamada 'Feedback' en tu Google Sheet. Por favor créala.")
-        except Exception as e:
-            st.error(f"🚨 ERROR DE CONEXIÓN: {e}")
+    if sh is None: return
+
+    try:
+        ws = sh.worksheet("Feedback")
+        ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta, respuesta[:50], calificacion])
+    except gspread.exceptions.WorksheetNotFound:
+        st.error("🚨 ERROR: No existe la pestaña 'Feedback' en tu Excel. Debes crearla con ese nombre exacto.")
+    except Exception as e:
+        st.error(f"🚨 ERROR AL GUARDAR FEEDBACK: {e}")
 
 # -----------------------------------------------------------------------
-# 4. LÓGICA DE DECISIÓN (CEREBRO PRINCIPAL)
+# 4. LÓGICA DE DECISIÓN (CON FILTROS V14)
 # -----------------------------------------------------------------------
 
 def revisar_guardrail_emergencia(consulta):
     consulta_norm = normalizar_texto(consulta)
     
-    # 1. Filtro de Absurdos/Ofensas (Frena el "comer neumáticos" o "pica el copi")
+    # 1. Filtro de Absurdos (Prioridad)
     for absurdo in PALABRAS_ABSURDAS:
         if absurdo in consulta_norm:
-            return "ABSURDO" # Señal para bloquear
+            return "ABSURDO" # Señal de bloqueo
 
     # 2. Filtro de Emergencia Médica
     for p in PALABRAS_ALARMA:
@@ -221,6 +220,7 @@ def revisar_guardrail_emergencia(consulta):
             return "EMERGENCIA"
             
     return False
+
 def detectar_groseria(texto):
     for g in GROSERIAS_DOLOR:
         if g in texto.lower(): return True
@@ -230,13 +230,10 @@ def buscar_respuesta_inteligente(consulta, df, vectorizer, matriz_tfidf, umbral=
     texto_norm = normalizar_texto(consulta)
     palabras = texto_norm.split()
     
-    # 1. FILTRO RÁPIDO (PERSONALIDAD & ANTI-LOOP)
     if len(palabras) <= 4:
         for frase, resp in RESPUESTAS_RAPIDAS.items():
-            if frase in texto_norm: 
-                return resp, [] 
+            if frase in texto_norm: return resp, [] 
 
-    # 2. BÚSQUEDA MÉDICA
     consulta_vec = vectorizer.transform([texto_norm])
     similitudes = cosine_similarity(consulta_vec, matriz_tfidf)
     mejor_score = similitudes.max()
@@ -246,7 +243,6 @@ def buscar_respuesta_inteligente(consulta, df, vectorizer, matriz_tfidf, umbral=
         respuesta_base = df.iloc[idx]['respuesta_validada']
         tags = df.iloc[idx].get('tags', [])
         
-        # Ajuste de Tono (Si hay groserías, somos directos)
         if detectar_groseria(consulta):
             preambulo = random.choice(FRASES_URGENCIA)
         else:
@@ -254,7 +250,6 @@ def buscar_respuesta_inteligente(consulta, df, vectorizer, matriz_tfidf, umbral=
             
         return preambulo + respuesta_base, tags
 
-    # 3. FALLBACK
     return (
         "Esa pregunta es muy específica y prefiero no improvisar por tu seguridad. "
         "La dejaré registrada para el Dr. ¿Tienes alguna duda sobre cuidados, heridas o medicamentos?", []
@@ -262,14 +257,14 @@ def buscar_respuesta_inteligente(consulta, df, vectorizer, matriz_tfidf, umbral=
 
 def responder_consulta(consulta, df, vectorizer, matriz_tfidf, contexto_previo=""):
     
-    # CHEQUEO DE SEGURIDAD Y SENTIDO COMÚN
+    # CHEQUEO DE SEGURIDAD Y ABSURDOS
     estado_seguridad = revisar_guardrail_emergencia(consulta)
     
     if estado_seguridad == "EMERGENCIA":
         return MENSAJE_ALERTA, []
     
     if estado_seguridad == "ABSURDO":
-        return "Esa consulta parece estar fuera de mi contexto médico o no tiene una respuesta clínica lógica. Por favor, preguntemos cosas relacionadas con tu recuperación (herida, medicamentos, reposo).", []
+        return "Esa consulta parece estar fuera de contexto médico o no tiene sentido clínico. Por favor, centrémonos en tu recuperación (herida, dolor, remedios).", []
     
     # GESTIÓN DE CONTEXTO ESTRICTA
     texto_split = consulta.split()
