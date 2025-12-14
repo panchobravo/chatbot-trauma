@@ -1,5 +1,5 @@
 # =======================================================================
-# CHATBOT_BACKEND.PY - V10.0 (CEREBRO CONTEXTUAL & ANTI-LOOP)
+# CHATBOT_BACKEND.PY - V11.0 (ANTI-ALUCINACIONES & CONTEXTO ESTRICTO)
 # =======================================================================
 
 import json
@@ -18,55 +18,39 @@ import re
 # 1. MAPAS DE LENGUAJE Y SEGURIDAD
 # -----------------------------------------------------------------------
 
-# Corrector de "Chilenismos" y Typos Frecuentes
-# Esto traduce lo que el paciente escribe a lo que el bot entiende.
 CHILENISMOS_MAP = {
-    # Typos y Errores comunes detectados
-    r"\bquiero la pata\b": "quebre la pierna", # Corrección específica para tu error
+    r"\bquiero la pata\b": "quebre la pierna", 
     r"\bme quiero\b": "me quebre", 
-    
-    # Anatomía y Jerga
-    r"\bpata\b": "pierna", 
-    r"\bguata\b": "estomago", 
-    r"\bpucho\b": "cigarro",
-    r"\bcago\b": "daño", 
-    
-    # Intensificadores
-    r"\bcaleta\b": "mucho", 
-    r"\bbrigido\b": "intenso", 
-    r"\bpal gato\b": "mal",
-    r"\bmas o menos\b": "regular",
-    
-    # Verbos/Acciones
-    r"\bcachai\b": "entiendes", 
-    r"\bpesca\b": "atencion", 
-    r"\bal tiro\b": "inmediatamente",
-    r"\bsipo\b": "si", 
-    r"\byapo\b": "ya",
-    r"\bnopo\b": "no"
+    r"\bme saque la cresta\b": "caida grave",
+    r"\bpata\b": "pierna", r"\bguata\b": "estomago", r"\bpucho\b": "cigarro",
+    r"\bcago\b": "daño", r"\bcaleta\b": "mucho", r"\bbrigido\b": "intenso", 
+    r"\bpal gato\b": "mal", r"\bmas o menos\b": "regular", r"\bcachai\b": "entiendes", 
+    r"\bpesca\b": "atencion", r"\bal tiro\b": "inmediatamente", r"\bsipo\b": "si", 
+    r"\byapo\b": "ya", r"\bnopo\b": "no", r"\bctm\b": "dolor terrible",
+    r"\bmierda\b": "dolor", r"\bconchetumare\b": "dolor terrible"
 }
 
-# ALERTA ROJA: Palabras que disparan envío a URGENCIAS inmediatamente.
-# Agregamos variantes de fractura.
+# Palabras que indican que el paciente está desesperado o insultando del dolor
+GROSERIAS_DOLOR = ["ctm", "conchetumare", "mierda", "pico", "puta", "recontra"]
+
 PALABRAS_ALARMA = [
     "fiebre", "pus", "secreción", "infección", "sangrado abundante", 
     "hemorragia", "dolor insoportable", "desmayo", "no puedo respirar",
     "dedos azules", "no siento la pierna", "calor extremo",
     "se abrió", "abierta", "herida abierta", "hueso expuesto", 
     "tornillo", "supurando", "mal olor", "negro", "necrosis",
-    "quebre", "quiebro", "rompi", "fractura", "sono un crack", "cague la operacion"
+    "quebre", "quiebro", "rompi", "fractura", "sono un crack"
 ]
 
 MENSAJE_ALERTA = """
 🚨 **ALERTA DE EMERGENCIA** 🚨
-Lo que describes parece una complicación grave (posible infección o fractura).
+Lo que describes parece una complicación grave.
 **NO es algo para resolver por chat.**
 Por favor, dirígete al **Servicio de Urgencia** más cercano de inmediato.
 """
 
-# CEREBRO SOCIAL (Prioridad Alta para frases cortas)
 DICCIONARIO_SOCIAL = {
-    "si": "Perfecto. Si te surge otra duda mientras lees, aquí estoy.",
+    "si": "Bien. Si tienes otra duda, dímela.",
     "bueno": "Quedamos en eso.",
     "ya": "Súper. ¿Algo más?",
     "ok": "Vale, seguimos.",
@@ -81,6 +65,7 @@ DICCIONARIO_SOCIAL = {
     "regular": "Paciencia, hay días lentos. Sigue las indicaciones y mejorará."
 }
 
+# Frases suaves para situaciones normales
 FRASES_EMPATIA = [
     "Es una duda muy frecuente. Te cuento: ",
     "Mira, según el protocolo médico: ",
@@ -89,24 +74,27 @@ FRASES_EMPATIA = [
     "Claro, déjame explicarte este punto: "
 ]
 
+# Frases directas para cuando hay groserías/dolor intenso (Sin rodeos)
+FRASES_URGENCIA = [
+    "Entiendo que el dolor es fuerte. Ojo con esto: ",
+    "Mantén la calma. Mira: ",
+    "Vale, vamos al grano: ",
+    "" # A veces mejor no decir nada y dar la info
+]
+
 # -----------------------------------------------------------------------
-# 2. MOTOR DE PROCESAMIENTO (NLP)
+# 2. MOTOR NLP
 # -----------------------------------------------------------------------
 
 def normalizar_texto(texto):
     if not isinstance(texto, str): return ""
     texto = texto.lower()
-    
-    # 1. Aplicar correcciones de mapa (Typos y Chilenismos)
     for slang, standard in CHILENISMOS_MAP.items():
         texto = re.sub(slang, standard, texto)
-    
-    # 2. Limpieza básica
     texto = ''.join([char for char in texto if char not in string.punctuation])
     return texto
 
 def combinar_columnas(row):
-    # Fusionamos Intención + Palabras Clave + Tags para búsqueda amplia
     tags = " ".join(row.get('tags', [])) if isinstance(row.get('tags'), list) else ""
     return f"{row['intencion_clave']} {' '.join(row['palabras_clave'])} {tags}"
 
@@ -119,38 +107,36 @@ def cargar_y_preparar_base(archivo_json):
     return df
 
 def inicializar_vectorizador(df):
-    # char_wb + ngram 3-5 permite detectar palabras aunque estén mal escritas
     vectorizer = TfidfVectorizer(analyzer='char_wb', ngram_range=(3, 5))
     matriz_tfidf = vectorizer.fit_transform(df['intencion_preprocesada'])
     return vectorizer, matriz_tfidf
 
 # -----------------------------------------------------------------------
-# 3. LÓGICA DE DECISIÓN (EL NÚCLEO ARREGLADO)
+# 3. LÓGICA DE DECISIÓN
 # -----------------------------------------------------------------------
 
 def revisar_guardrail_emergencia(consulta):
     consulta_norm = normalizar_texto(consulta)
     for p in PALABRAS_ALARMA:
-        if p in consulta_norm: 
-            return True
+        if p in consulta_norm: return True
+    return False
+
+def detectar_groseria(texto):
+    for g in GROSERIAS_DOLOR:
+        if g in texto.lower(): return True
     return False
 
 def buscar_respuesta_inteligente(consulta, df, vectorizer, matriz_tfidf, umbral=0.16):
-    
-    # PASO 1: NORMALIZACIÓN
     texto_norm = normalizar_texto(consulta)
     palabras = texto_norm.split()
     
-    # PASO 2: FILTRO SOCIAL ANTICIPADO (Anti-Loop)
-    # Si la frase es corta (menos de 3 palabras) Y está en el diccionario social,
-    # respondemos eso INMEDIATAMENTE y cortamos el flujo.
-    # Esto evita que "si" busque en la base médica.
+    # 1. Filtro Social (Anti-Loop)
     if len(palabras) <= 3:
         for palabra in palabras:
             if palabra in DICCIONARIO_SOCIAL:
-                return DICCIONARIO_SOCIAL[palabra], []
+                return DICCIONARIO_SOCIAL[palabra], [] # Tags vacíos para limpiar contexto
 
-    # PASO 3: BÚSQUEDA MÉDICA (Si no fue charla social corta)
+    # 2. Búsqueda Médica
     consulta_vec = vectorizer.transform([texto_norm])
     similitudes = cosine_similarity(consulta_vec, matriz_tfidf)
     mejor_score = similitudes.max()
@@ -159,63 +145,37 @@ def buscar_respuesta_inteligente(consulta, df, vectorizer, matriz_tfidf, umbral=
     if mejor_score > umbral:
         respuesta_base = df.iloc[idx]['respuesta_validada']
         tags = df.iloc[idx].get('tags', [])
-        preambulo = random.choice(FRASES_EMPATIA)
+        
+        # Lógica de Preámbulo Dinámico
+        if detectar_groseria(consulta):
+            # Si hay "CTM", usamos frase corta o nula
+            preambulo = random.choice(FRASES_URGENCIA)
+        else:
+            # Si es educado, usamos frase empática
+            preambulo = random.choice(FRASES_EMPATIA)
+            
         return preambulo + respuesta_base, tags
 
-    # PASO 4: FALLBACK (Si no entendió nada)
+    # 3. Fallback
     return (
-        "Esa pregunta es muy específica. Para no arriesgarnos, prefiero dejarla anotada para el Dr. "
-        "¿Tienes alguna otra duda sobre cuidados generales, herida o medicamentos?", []
+        "Esa pregunta es muy específica y no quiero improvisar. "
+        "La dejaré anotada para el Dr. ¿Tienes alguna duda sobre herida, dolor o reposo?", []
     )
 
 def responder_consulta(consulta, df, vectorizer, matriz_tfidf, contexto_previo=""):
-    # 1. Chequeo de Seguridad PRIMERO (Prioridad Absoluta)
+    
+    # ALERTA DE SEGURIDAD PRIMERO
     if revisar_guardrail_emergencia(consulta):
-        return MENSAJE_ALERTA, []
+        return MENSAJE_ALERTA, [] # Limpiamos contexto en emergencia
     
-    # 2. Manejo de Contexto (Solo para frases médicas cortas, no para "si" o "gracias")
-    texto_norm = normalizar_texto(consulta)
-    es_social = any(p in DICCIONARIO_SOCIAL for p in texto_norm.split() if len(texto_norm.split()) <= 3)
-    
-    if not es_social and len(consulta.split()) < 5 and contexto_previo:
+    # GESTIÓN DE CONTEXTO ESTRICTA (FIX DEL ARROZ)
+    # Solo agregamos contexto si la consulta es MUY corta (< 3 palabras)
+    # Ejemplo: "¿y eso duele?" (3 palabras) -> Agrega contexto.
+    # Ejemplo: "puedo comer arroz" (3 palabras) -> NO agrega contexto.
+    texto_split = consulta.split()
+    if len(texto_split) < 3 and contexto_previo:
         consulta_aumentada = f"{consulta} {contexto_previo}"
     else:
         consulta_aumentada = consulta
 
-    # 3. Ejecutar búsqueda
     return buscar_respuesta_inteligente(consulta_aumentada, df, vectorizer, matriz_tfidf)
-
-# -----------------------------------------------------------------------
-# 4. HERRAMIENTAS DE REGISTRO (GOOGLE SHEETS)
-# -----------------------------------------------------------------------
-def conectar_sheets():
-    if "google_credentials" in st.secrets:
-        creds_dict = dict(st.secrets["google_credentials"])
-        gc = gspread.service_account_from_dict(creds_dict)
-        return gc.open("Cerebro_Bot")
-    return None
-
-def registrar_pregunta_en_sheets(consulta):
-    try:
-        sh = conectar_sheets()
-        if sh: sh.sheet1.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta])
-    except: pass
-
-def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
-    try:
-        sh = conectar_sheets()
-        if sh:
-            try: ws = sh.worksheet("Usuarios")
-            except: ws = sh.sheet1
-            ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), nombre, apellidos, rut, telefono, email])
-            return True
-    except: return False
-
-def registrar_feedback(consulta, respuesta, calificacion):
-    try:
-        sh = conectar_sheets()
-        if sh:
-            try: ws = sh.worksheet("Feedback")
-            except: ws = sh.add_worksheet(title="Feedback", rows=1000, cols=4)
-            ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta, respuesta[:50], calificacion])
-    except: pass
