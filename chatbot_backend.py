@@ -1,5 +1,5 @@
 # =======================================================================
-# CHATBOT_BACKEND.PY - V5.1 "BLINDADA" (Sintaxis Simplificada)
+# CHATBOT_BACKEND.PY - V5.2 "ENTENDIMIENTO EXPANDIDO"
 # =======================================================================
 
 import json
@@ -33,17 +33,33 @@ Si la herida se abrió, ves material (placas/hueso) o hay infección, **NO toque
 """
 
 CHARLA_SOCIAL = {
+    # Saludos
+    "hola": "¡Hola! ¿Cómo amaneció esa pierna hoy?",
+    "buenos dias": "¡Buen día! ¿Cómo pasaste la noche?",
+    "buenas tardes": "¡Buenas tardes! ¿En qué te puedo ayudar?",
+    "chao": "¡Descansa! Intenta mantener la pierna en alto.",
+    "adios": "¡Que tengas buen descanso! Cuídate.",
+    
+    # Estado del Dr.
     "como esta el doctor": "¡El Dr. está a mil por hora operando! Pero me dejó encargado de cuidarlos. ¿Tú cómo sigues?",
+    
+    # Agradecimientos
     "gracias": "¡De nada! Estamos remando juntos en esto. 💪",
     "muchas gracias": "Un placer. Cualquier cosa chica que te preocupe, escríbeme.",
-    "hola": "¡Hola! ¿Cómo amaneció esa pierna hoy?",
-    "chao": "¡Descansa! Intenta mantener la pierna en alto un ratito.",
-    "adios": "¡Que tengas buen descanso! Cuídate.",
+    
+    # Identidad
     "eres un robot": "Soy una IA entrenada por el equipo médico, pero créeme que me preocupo por tu recuperación.",
     "eres humano": "Soy tu asistente virtual, pero detrás de mis respuestas está la experiencia de todo el equipo médico.",
+    
+    # Errores
     "te equivocaste": "¡Ups! Tienes razón, a veces aprendo lento. Gracias por la paciencia.",
-    "buenos dias": "¡Buen día! ¿Cómo pasaste la noche?",
-    "buenas tardes": "¡Buenas tardes! ¿En qué te puedo ayudar en este momento?"
+    
+    # PREGUNTAS DE APERTURA (NUEVO)
+    "tengo una duda": "Para eso estoy. Cuéntame, ¿qué te preocupa?",
+    "quiero hacer una consulta": "Adelante, soy todo oídos. ¿Qué pasó?",
+    "puedo hacer una pregunta": "¡Claro que sí! Pregunta con confianza.",
+    "sabes algo": "Sé bastante sobre tu recuperación. Ponme a prueba. 😉",
+    "necesito ayuda": "Aquí estoy. ¿Es algo urgente o una duda sobre el tratamiento?"
 }
 
 RESPUESTAS_EMOCIONALES = {
@@ -90,7 +106,6 @@ def combinar_columnas(row):
     """Función auxiliar para evitar errores de sintaxis en lambdas complejas"""
     parte1 = str(row['intencion_clave'])
     parte2 = " ".join(row['palabras_clave'])
-    # Manejo seguro de tags
     tags = row.get('tags', [])
     if isinstance(tags, list):
         parte3 = " ".join(tags)
