@@ -1,5 +1,5 @@
 # =======================================================================
-# CHATBOT_BACKEND.PY - VERSIÓN EMPÁTICA Y SEGURA v3.0
+# CHATBOT_BACKEND.PY - ALGORITMO DE BÚSQUEDA VECTORIAL MEJORADO (V4.0)
 # =======================================================================
 
 import json
@@ -14,11 +14,9 @@ import gspread
 import random
 
 # -----------------------------------------------------------------------
-# 1. CONFIGURACIÓN DE PERSONALIDAD Y SEGURIDAD
+# 1. CONSTANTES Y CONFIGURACIÓN
 # -----------------------------------------------------------------------
 
-# ALARMA ROJA: Palabras que activan el "Vaya a Urgencias"
-# Agregamos: "abrio", "placa", "hueso", "tornillo", "supura"
 PALABRAS_ALARMA = [
     "fiebre", "pus", "secreción", "infección", "sangrado abundante", 
     "hemorragia", "dolor insoportable", "desmayo", "no puedo respirar",
@@ -34,7 +32,6 @@ Si la herida se abrió, ves material (placas/hueso) o hay infección, **NO toque
 **Dirígete a Urgencias ahora mismo.**
 """
 
-# DICCIONARIO SOCIAL: Respuestas a saludos y estados de ánimo
 CHARLA_SOCIAL = {
     "como esta el doctor": "¡El Dr. está excelente! Operando, pero atento a ustedes.",
     "gracias": "No hay de qué. Vamos paso a paso con esa recuperación. 💪",
@@ -45,7 +42,6 @@ CHARLA_SOCIAL = {
     "eres humano": "Soy una IA asistente del equipo médico. Estoy aquí para que no te sientas solo/a con tus dudas."
 }
 
-# DICCIONARIO EMOCIONAL: Detecta sentimientos en frases cortas
 RESPUESTAS_EMOCIONALES = {
     "mal": "Siento escuchar eso. La recuperación tiene días difíciles. ¿Tienes mucho dolor o es algo más?",
     "mas o menos": "Entiendo, hay días mejores y peores. ¿Qué es lo que más te molesta hoy?",
@@ -65,31 +61,52 @@ FRASES_EMPATIA = [
 ]
 
 # -----------------------------------------------------------------------
-# 2. FUNCIONES TÉCNICAS (NLP)
+# 2. PROCESAMIENTO NLP (CORE)
 # -----------------------------------------------------------------------
+
 def preprocesar_texto(texto):
+    if not isinstance(texto, str):
+        return ""
     texto = texto.lower()
     texto = ''.join([char for char in texto if char not in string.punctuation])
     try:
         stop_words_es = stopwords.words('spanish')
     except:
-        stop_words_es = ["el", "la", "los", "las", "un", "una", "y", "o", "de", "a", "en", "que", "me"]
+        # Fallback si NLTK no descarga las stopwords
+        stop_words_es = ["el", "la", "los", "las", "un", "una", "y", "o", "de", "a", "en", "que", "me", "mi", "mis"]
     
     palabras = texto.split()
     palabras_filtradas = [w for w in palabras if w not in stop_words_es]
     return ' '.join(palabras_filtradas)
 
 def cargar_y_preparar_base(archivo_json):
+    """
+    Carga el JSON y crea un campo 'texto_busqueda' que concatena
+    la intención clave + las palabras clave. Esto corrige el error
+    de que el bot no encuentre términos que solo están en los tags.
+    """
     with open(archivo_json, 'r', encoding='utf-8') as f:
         data = json.load(f)
     df = pd.DataFrame(data)
-    df['intencion_preprocesada'] = df['intencion_clave'].apply(preprocesar_texto)
+    
+    # FUSIONAMOS INTENCIÓN + PALABRAS CLAVE (SOLUCIÓN AL BUG)
+    df['texto_busqueda'] = df.apply(
+        lambda row: row['intencion_clave'] + " " + " ".join(row['palabras_clave']), 
+        axis=1
+    )
+    
+    # Vectorizamos sobre el campo fusionado
+    df['intencion_preprocesada'] = df['texto_busqueda'].apply(preprocesar_texto)
     return df
 
 def inicializar_vectorizador(df):
     vectorizer = TfidfVectorizer()
     matriz_tfidf = vectorizer.fit_transform(df['intencion_preprocesada'])
     return vectorizer, matriz_tfidf
+
+# -----------------------------------------------------------------------
+# 3. CONEXIÓN A GOOGLE SHEETS
+# -----------------------------------------------------------------------
 
 def registrar_pregunta_en_sheets(consulta):
     try:
@@ -103,25 +120,44 @@ def registrar_pregunta_en_sheets(consulta):
     except Exception as e:
         print(f"Error Sheets: {e}")
 
+def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
+    try:
+        if "google_credentials" in st.secrets:
+            creds_dict = dict(st.secrets["google_credentials"])
+            gc = gspread.service_account_from_dict(creds_dict)
+            sh = gc.open("Cerebro_Bot")
+            try:
+                worksheet = sh.worksheet("Usuarios")
+            except:
+                worksheet = sh.sheet1 
+            ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            worksheet.append_row([ahora, nombre, apellidos, rut, telefono, email])
+            return True
+    except Exception as e:
+        st.error(f"Error guardando paciente: {e}")
+        return False
+
 # -----------------------------------------------------------------------
-# 3. CEREBRO PRINCIPAL
+# 4. LÓGICA DE RESPUESTA
 # -----------------------------------------------------------------------
-def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.25):
+
+def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.20): # Umbral optimizado
     
     consulta_clean = consulta.lower().strip()
+    palabras_usuario = consulta_clean.split()
 
-    # 1. FILTRO SOCIAL EXACTO
-    for frase, respuesta in CHARLA_SOCIAL.items():
-        if frase in consulta_clean:
-            return respuesta
+    # 1. FILTRO SOCIAL (Solo si la frase es corta < 5 palabras)
+    if len(palabras_usuario) < 5: 
+        for frase, respuesta in CHARLA_SOCIAL.items():
+            if frase in consulta_clean:
+                return respuesta
 
-    # 2. FILTRO EMOCIONAL (Busca palabras clave dentro de la frase)
-    # Esto detecta "estoy mas o menos" o "me siento mal"
+    # 2. FILTRO EMOCIONAL
     for emocion, respuesta in RESPUESTAS_EMOCIONALES.items():
         if emocion in consulta_clean:
             return respuesta
 
-    # 3. BÚSQUEDA MÉDICA
+    # 3. BÚSQUEDA MÉDICA (VECTORIAL)
     consulta_preprocesada = preprocesar_texto(consulta)
     
     if not consulta_preprocesada:
@@ -138,7 +174,7 @@ def buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf, umbral=0.25):
         return preambulo + respuesta_medica
     else:
         registrar_pregunta_en_sheets(consulta)
-        return "Entiendo tu pregunta, pero como es un tema delicado y no tengo la respuesta exacta validada por el Dr., prefiero no arriesgarme. Ya dejé anotada tu duda para preguntarle. Si es algo urgente, por favor llama a la consulta."
+        return "Entiendo tu pregunta, pero como es un tema delicado y no tengo la respuesta exacta validada por el Dr., prefiero no arriesgarme. Ya dejé anotada tu duda para preguntarle."
 
 def revisar_guardrail_emergencia(consulta):
     consulta_lower = consulta.lower()
@@ -148,34 +184,6 @@ def revisar_guardrail_emergencia(consulta):
     return False
 
 def responder_consulta(consulta, df, vectorizer, matriz_tfidf):
-    # PRIMERO: Revisar si se muere
     if revisar_guardrail_emergencia(consulta):
         return MENSAJE_ALERTA
-    
-    # SEGUNDO: Responder normal
     return buscar_respuesta_tfidf(consulta, df, vectorizer, matriz_tfidf)
-
-# -----------------------------------------------------------------------
-# 4. FUNCIÓN DE REGISTRO DE PACIENTES (NUEVO)
-# -----------------------------------------------------------------------
-def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
-    """Guarda los datos del paciente en la pestaña 'Usuarios'"""
-    try:
-        if "google_credentials" in st.secrets:
-            creds_dict = dict(st.secrets["google_credentials"])
-            gc = gspread.service_account_from_dict(creds_dict)
-            
-            sh = gc.open("Cerebro_Bot")
-            
-            try:
-                worksheet = sh.worksheet("Usuarios")
-            except:
-                worksheet = sh.sheet1 
-            
-            ahora = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            # AHORA GUARDAMOS EL APELLIDO EN SU PROPIA COLUMNA
-            worksheet.append_row([ahora, nombre, apellidos, rut, telefono, email])
-            return True
-    except Exception as e:
-        st.error(f"Error guardando paciente: {e}")
-        return False
