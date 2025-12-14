@@ -63,13 +63,13 @@
     "tags": ["cuidados generales", "factores de riesgo", "retardo consolidación", "habitos"]
   },
   {
-    "id_qa": "USO_BOTA_CAM",
-    "diagnostico": "Uso de Bota CAM / Zapato Postop",
-    "intencion_clave": "bota, dormir con bota, me puedo sacar la bota, zapato postoperatorio",
-    "palabras_clave": ["bota", "cam walker", "dormir", "noche", "velcro", "ortesis", "zapato"],
-    "respuesta_validada": "Respecto a la bota o zapato especial: Úsala siempre durante el día y para cualquier traslado. En la noche, para que descanses mejor, te la puedes soltar un poco (aflojar velcros), pero no te la saques completamente a menos que te lo hayamos indicado, ya que protege el pie de movimientos bruscos mientras sueñas.",
+    "id_qa": "USO_ORTESIS_BOTA_YESO",
+    "diagnostico": "Diferencia de Uso: Yeso vs Bota CAM",
+    "intencion_clave": "me puedo sacar la bota, me puedo sacar el yeso, dormir con bota, soltar la bota, me aprieta el yeso",
+    "palabras_clave": ["bota", "cam", "yeso", "sacar", "quitar", "dormir", "soltar", "zapato", "velcros", "aprieta"],
+    "respuesta_validada": "Ojo, que aquí la regla cambia dependiendo de lo que tengas puesto:\n\n1. **Si tienes YESO:** Es inamovible. **NO** se puede sacar, ni soltar, ni mojar bajo ninguna circunstancia. Si te molesta o aprieta mucho, no trates de arreglarlo tú, avísanos.\n\n2. **Si tienes BOTA CAM o Zapato Postoperatorio:** La ventaja es que los velcros permiten cierto manejo. Podrías soltarla un poco si te molesta en momentos del día o para dormir, pero **SOLO SI** tu traumatólogo te lo mencionó explícitamente. Si no tienes esa indicación clara, ante la duda, mantenla puesta.",
     "nivel_de_urgencia": "BAJO",
-    "tags": ["ortesis", "cuidados"]
+    "tags": ["cuidados", "ortesis", "educacion"]
   },
   {
     "id_qa": "DESCARGA_EXTREMIDAD",
