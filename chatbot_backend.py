@@ -64,6 +64,12 @@ PALABRAS_ALARMA = [
     "tornillo", "supurando", "mal olor", "negro", "necrosis",
     "quebre", "quiebro", "rompi", "fractura", "sono un crack"
 ]
+# Palabras que activan el rechazo inmediato por ser absurdas o fuera de contexto médico
+PALABRAS_ABSURDAS = [
+    "neumatico", "neumaticos", "llanta", "vidrio", "caca", "mierda", "piedra", 
+    "cloro", "detergente", "copi", "pico", "pene", "vagina", "sexo", "tula", 
+    "chupa", "idiota", "tonto", "estupido"
+]
 
 MENSAJE_ALERTA = """
 🚨 **ALERTA DE SEGURIDAD** 🚨
@@ -185,17 +191,17 @@ def guardar_paciente_en_sheets(nombre, apellidos, rut, telefono, email):
     except: return False
 
 def registrar_feedback(consulta, respuesta, calificacion):
-    # Sin try/except para que veas el error si falla
+    # VERSIÓN DE DIAGNÓSTICO (Sin silenciador)
     sh = conectar_sheets()
     if sh:
-        # Intenta buscar la hoja, si no existe avisa
-        try: 
+        try:
+            # Intenta abrir la hoja. Si falló el nombre, aquí saltará el error.
             ws = sh.worksheet("Feedback")
-        except: 
-            st.error("Error: No encuentro la pestaña 'Feedback' en el Excel.")
-            return
-
-        ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta, respuesta[:50], calificacion])
+            ws.append_row([datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), consulta, respuesta[:50], calificacion])
+        except gspread.exceptions.WorksheetNotFound:
+            st.error("🚨 ERROR CRÍTICO: No existe la pestaña llamada 'Feedback' en tu Google Sheet. Por favor créala.")
+        except Exception as e:
+            st.error(f"🚨 ERROR DE CONEXIÓN: {e}")
 
 # -----------------------------------------------------------------------
 # 4. LÓGICA DE DECISIÓN (CEREBRO PRINCIPAL)
@@ -203,10 +209,18 @@ def registrar_feedback(consulta, respuesta, calificacion):
 
 def revisar_guardrail_emergencia(consulta):
     consulta_norm = normalizar_texto(consulta)
-    for p in PALABRAS_ALARMA:
-        if p in consulta_norm: return True
-    return False
+    
+    # 1. Filtro de Absurdos/Ofensas (Frena el "comer neumáticos" o "pica el copi")
+    for absurdo in PALABRAS_ABSURDAS:
+        if absurdo in consulta_norm:
+            return "ABSURDO" # Señal para bloquear
 
+    # 2. Filtro de Emergencia Médica
+    for p in PALABRAS_ALARMA:
+        if p in consulta_norm: 
+            return "EMERGENCIA"
+            
+    return False
 def detectar_groseria(texto):
     for g in GROSERIAS_DOLOR:
         if g in texto.lower(): return True
@@ -248,9 +262,14 @@ def buscar_respuesta_inteligente(consulta, df, vectorizer, matriz_tfidf, umbral=
 
 def responder_consulta(consulta, df, vectorizer, matriz_tfidf, contexto_previo=""):
     
-    # ALERTA DE SEGURIDAD
-    if revisar_guardrail_emergencia(consulta):
-        return MENSAJE_ALERTA, [] 
+    # CHEQUEO DE SEGURIDAD Y SENTIDO COMÚN
+    estado_seguridad = revisar_guardrail_emergencia(consulta)
+    
+    if estado_seguridad == "EMERGENCIA":
+        return MENSAJE_ALERTA, []
+    
+    if estado_seguridad == "ABSURDO":
+        return "Esa consulta parece estar fuera de mi contexto médico o no tiene una respuesta clínica lógica. Por favor, preguntemos cosas relacionadas con tu recuperación (herida, medicamentos, reposo).", []
     
     # GESTIÓN DE CONTEXTO ESTRICTA
     texto_split = consulta.split()
