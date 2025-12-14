@@ -101,9 +101,9 @@
   {
     "id_qa": "SIGNOS_TROMBOSIS",
     "diagnostico": "Alerta de Trombosis",
-    "intencion_clave": "dolor pantorrilla, calambre fuerte, trombosis, coágulo, dolor gemelo",
-    "palabras_clave": ["dolor pantorrilla", "calambre fuerte", "trombosis", "coágulo", "dolor gemelo", "falta de aire", "pecho", "disnea"],
-    "respuesta_validada": "En cirugía de pierna esto es muy importante. Si sientes un dolor profundo en la pantorrilla (el gemelo), como un calambre que no se pasa, o si te falta el aire de la nada, no esperes. Ve al **servicio de urgencia más cercano** para que te hagan una eco. Es mejor pecar de exagerado que ignorar una posible trombosis. Recuerda usar tu tromboprofilaxis (anticoagulante) si te la indicamos.",
+    "intencion_clave": "dolor pantorrilla, calambre fuerte, trombosis, coágulo, dolor gemelo, pulmon, embolia, respirar",
+    "palabras_clave": ["dolor pantorrilla", "calambre fuerte", "trombosis", "coágulo", "dolor gemelo", "falta de aire", "pecho", "pulmón", "pulmon", "embolia", "respirar", "ahogo", "viajar"],
+    "respuesta_validada": "En cirugía de pierna esto es muy importante. Si el coágulo viaja, puede irse al pulmón (Embolia). Si sientes dolor profundo en la pantorrilla, o **te falta el aire/te cuesta respirar**, no esperes. Ve al **servicio de urgencia más cercano** para una evaluación urgente. Es mejor pecar de exagerado.",
     "nivel_de_urgencia": "ALTO",
     "tags": ["emergencia", "trombosis"]
   },
